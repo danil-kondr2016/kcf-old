@@ -34,10 +34,24 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 	}
 	while (n_read);
 
+	if (ferror(hKCF->File))
+		return KCF_ERROR_READ;
+
 	return KCF_ERROR_INVALID_FORMAT;
 }
 
-#ifdef TEST_MARKER
+KCFERROR WriteArchiveMarker(HKCF hKCF)
+{
+	if (fputc(MARKER_1, hKCF->File) == EOF) return KCF_ERROR_WRITE;
+	if (fputc(MARKER_2, hKCF->File) == EOF) return KCF_ERROR_WRITE;
+	if (fputc(MARKER_3, hKCF->File) == EOF) return KCF_ERROR_WRITE;
+	if (fputc(MARKER_4, hKCF->File) == EOF) return KCF_ERROR_WRITE;
+	if (fputc(MARKER_5, hKCF->File) == EOF) return KCF_ERROR_WRITE;
+	if (fputc(MARKER_6, hKCF->File) == EOF) return KCF_ERROR_WRITE;
+	return KCF_ERROR_OK;
+}
+
+#ifdef TEST_SCAN_MARKER
 int main(void)
 {
 	HKCF hKCF;

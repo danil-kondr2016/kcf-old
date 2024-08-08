@@ -34,5 +34,6 @@ struct KcfFileHeader
 };
 
 KCFERROR ScanArchiveForMarker(HKCF hKCF);
+KCFERROR WriteArchiveMarker(HKCF hKCF);
 
 #endif
