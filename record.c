@@ -1,6 +1,7 @@
 #include "record.h"
 
 #include "kcf_impl.h"
+#include <stdlib.h>
 
 static inline uint16_t read_u16le(uint8_t *buf)
 {
@@ -17,10 +18,15 @@ static inline uint64_t read_u64le(uint8_t *buf) {
 		| ((uint64_t)read_u32le(buf+4) << 32);
 }
 
-KCFERROR ReadRecordHeader(HKCF hKCF, struct KcfRecordHeader *RecordHdr)
+static
+KCFERROR read_record_header(
+		HKCF hKCF, 
+		struct KcfRecordHeader *RecordHdr,
+		size_t *HeaderSize
+)
 {
 	uint8_t buffer[14] = {0};
-	size_t n_read = 0;
+	size_t hdr_size = 0;
 
 	if (!hKCF)
 		return KCF_ERROR_INVALID_PARAMETER;
@@ -30,6 +36,7 @@ KCFERROR ReadRecordHeader(HKCF hKCF, struct KcfRecordHeader *RecordHdr)
 
 	if (!fread(buffer, 6, 1, hKCF->File))
 		return KCF_ERROR_READ;
+	hdr_size = 6;
 	RecordHdr->HeadCRC = read_u16le(buffer);
 	RecordHdr->HeadType = buffer[2];
 	RecordHdr->HeadFlags = buffer[3];
@@ -38,6 +45,7 @@ KCFERROR ReadRecordHeader(HKCF hKCF, struct KcfRecordHeader *RecordHdr)
 	if (RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8 != 0) {
 		if (!fread(buffer+6, 4, 1, hKCF->File))
 			return KCF_ERROR_READ;
+		hdr_size += 4;
 	}
 	else {
 		RecordHdr->AddedSize = 0;
@@ -48,11 +56,40 @@ KCFERROR ReadRecordHeader(HKCF hKCF, struct KcfRecordHeader *RecordHdr)
 		if (!fread(buffer+10, 4, 1, hKCF->File))
 			return KCF_ERROR_READ;
 		RecordHdr->AddedSize = read_u64le(buffer+6);
+		hdr_size += 4;
 	}
 	else if (RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8
 		       == KCF_HAS_ADDED_SIZE_4) {
 		RecordHdr->AddedSize = read_u32le(buffer+6);
 	}
+
+	if (HeaderSize)
+		*HeaderSize = hdr_size;
+	return KCF_ERROR_OK;
+}
+
+KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
+{
+	KCFERROR Error;
+	size_t HeaderSize;
+
+	if (!hKCF)
+		return KCF_ERROR_INVALID_PARAMETER;
+
+	if (!Record)
+		return KCF_ERROR_INVALID_PARAMETER;
+
+	Error = read_record_header(hKCF, &Record->Header, &HeaderSize);
+	if (Error)
+		return Error;
+	Record->DataSize = Record->Header.HeadSize - HeaderSize;
+
+	Record->Data = malloc(Record->DataSize);
+	if (!Record->Data)
+		return KCF_ERROR_OUT_OF_MEMORY;
+
+	if (!fread(Record->Data, Record->DataSize, 1, hKCF->File))
+		return KCF_ERROR_READ;
 
 	return KCF_ERROR_OK;
 }
@@ -62,7 +99,7 @@ int main(void)
 {
 	HKCF hKCF;
 	KCFERROR Error;
-	struct KcfRecordHeader Header;
+	struct KcfRecord Record;
 
 	Error = CreateArchive("tests/mk1g.kcf", KCF_MODE_READ, &hKCF);
 	if (Error) {
@@ -72,26 +109,30 @@ int main(void)
 
 	ScanArchiveForMarker(hKCF);
 
-	Error = ReadRecordHeader(hKCF, &Header);
+	Error = ReadRecord(hKCF, &Record);
 	if (Error) {
-		puts("ReadHeader,1,good,fail");
+		fputs("ReadHeader,1,good,fail,",stdout);
+		printf("%d\n", Error);
 		return 0;
 	}
 
-	if (Header.HeadCRC == 0xFFFF
-			&& Header.HeadType == 0x41
-			&& Header.HeadFlags == 0x00
-			&& Header.HeadSize == 0x0008)
+	if (Record.Header.HeadCRC == 0xFFFF
+			&& Record.Header.HeadType == 0x41
+			&& Record.Header.HeadFlags == 0x00
+			&& Record.Header.HeadSize == 0x0008
+			&& Record.DataSize == 2
+			&& Record.Data[0] == 0x01
+			&& Record.Data[1] == 0x00)
 	{
 		puts("ReadHeader,1,good,pass");
 	}
 	else {
-		puts("ReadHeader,1,good,fail");
-		fprintf(stderr, "CRC=%04X,Type=%02X,Flags=%02X,Size=%04X\n",
-				Header.HeadCRC,
-				Header.HeadType,
-				Header.HeadFlags,
-				Header.HeadSize);
+		fputs("ReadHeader,1,good,fail,",stdout);
+		printf("CRC=%04X,Type=%02X,Flags=%02X,Size=%04X\n",
+				Record.Header.HeadCRC,
+				Record.Header.HeadType,
+				Record.Header.HeadFlags,
+				Record.Header.HeadSize);
 	}
 
 	return 0;

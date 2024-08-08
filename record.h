@@ -33,9 +33,17 @@ struct KcfFileHeader
 	uint8_t FileFlags;
 };
 
+struct KcfRecord
+{
+	struct KcfRecordHeader Header;
+	uint8_t *Data;
+	size_t   DataSize;
+};
+
 KCFERROR ScanArchiveForMarker(HKCF hKCF);
 KCFERROR WriteArchiveMarker(HKCF hKCF);
 
-KCFERROR ReadRecordHeader(HKCF hKCF, struct KcfRecordHeader *RecordHdr);
+KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record);
+KCFERROR SkipRecord(HKCF hKCF);
 
 #endif
