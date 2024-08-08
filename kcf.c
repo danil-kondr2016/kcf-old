@@ -3,10 +3,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-struct Kcf
-{
-	FILE *File;
-};
+#include "kcf_impl.h"
 
 HRESULT CreateArchive(char *Path, int Mode, PHKCF phKCF)
 {
