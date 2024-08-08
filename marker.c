@@ -47,7 +47,7 @@ int main(void)
 
 	Error = CreateArchive("tests/mk1g.kcf", KCF_MODE_READ, &hKCF);
 	if (Error) {
-		fputs("not_found", stdout);
+		fputs("not_found\n", stdout);
 		fputs("Failed to conduct test #1\n", stderr);
 		return 1;
 	}
@@ -59,6 +59,26 @@ int main(void)
 	else {
 		fputs("fail\n", stdout);
 	}
+
+	CloseArchive(hKCF);
+
+	fputs("Marker,2,bad,", stdout);
+	Error = CreateArchive("tests/mk2b.kcf", KCF_MODE_READ, &hKCF);
+	if (Error) {
+		fputs("not_found\n", stdout);
+		fputs("Failed to conduct test #2\n", stderr);
+		return 1;
+	}
+
+	Error = ScanArchiveForMarker(hKCF);
+	if (Error == KCF_ERROR_INVALID_FORMAT) {
+		fputs("pass\n", stdout);
+	}
+	else {
+		fputs("fail\n", stdout);
+	}
+
+	CloseArchive(hKCF);
 
 	return 0;
 }
