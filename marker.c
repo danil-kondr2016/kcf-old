@@ -1,0 +1,37 @@
+#include "record.h"
+
+#include "kcf_impl.h"
+
+#define MARKER_1 'K'
+#define MARKER_2 'C'
+#define MARKER_3 '!'
+#define MARKER_4 0x1A
+#define MARKER_5 0x06
+#define MARKER_6 0x00
+
+KcfError ScanArchiveForMarker(HKCF hKCF)
+{
+	uint8_t buf[6] = {0};
+	size_t n_read = 0;
+
+	do {
+		if (buf[0] == MARKER_1
+			&& buf[1] == MARKER_2
+			&& buf[2] == MARKER_3
+			&& buf[3] == MARKER_4
+			&& buf[4] == MARKER_5
+			&& buf[5] == MARKER_6)
+			return KCF_ERROR_OK;
+
+		buf[0] = buf[1];
+		buf[1] = buf[2];
+		buf[2] = buf[3];
+		buf[3] = buf[4];
+		buf[4] = buf[5];
+
+		n_read = fread(&buf[5], 1, 1, hKCF->File);
+	}
+	while (n_read);
+
+	return KCF_ERROR_INVALID_FORMAT;
+}
