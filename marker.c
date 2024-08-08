@@ -1,4 +1,5 @@
 #include "record.h"
+#include "kcf.h"
 
 #include "kcf_impl.h"
 
@@ -9,7 +10,7 @@
 #define MARKER_5 0x06
 #define MARKER_6 0x00
 
-KcfError ScanArchiveForMarker(HKCF hKCF)
+KCFERROR ScanArchiveForMarker(HKCF hKCF)
 {
 	uint8_t buf[6] = {0};
 	size_t n_read = 0;

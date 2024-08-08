@@ -7,6 +7,7 @@
 #include <stdbool.h>
 
 #include "kcf.h"
+#include "errors.h"
 
 #define KCF_HAS_ADDED_SIZE_4 0x80
 #define KCF_HAS_ADDED_SIZE_8 0xC0
@@ -32,6 +33,6 @@ struct KcfFileHeader
 	uint8_t FileFlags;
 };
 
-KcfError ScanArchiveForMarker(HKCF hKCF);
+KCFERROR ScanArchiveForMarker(HKCF hKCF);
 
 #endif
