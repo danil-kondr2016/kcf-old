@@ -16,6 +16,7 @@ enum KcfError
 	KCF_ERROR_OUT_OF_MEMORY,
 	KCF_ERROR_WRITE,
 	KCF_ERROR_READ,
+	KCF_ERROR_EOF,
 };
 typedef enum KcfError KCFERROR;
 
