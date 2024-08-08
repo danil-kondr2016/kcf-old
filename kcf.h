@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _RECORD_H_
-#define _RECORD_H_
+#ifndef _KCF_H_
+#define _KCF_H_
 
 #include <stdio.h>
 #include <stdint.h>
@@ -8,7 +8,6 @@
 
 #include "errors.h"
 
-struct Kcf;
 typedef struct Kcf *HKCF, **PHKCF;
 
 #define KCF_MODE_READ   0x01
