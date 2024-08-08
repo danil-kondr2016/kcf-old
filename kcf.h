@@ -15,7 +15,7 @@ typedef struct Kcf *HKCF, **PHKCF;
 #define KCF_MODE_CREATE 0x02
 #define KCF_MODE_MODIFY 0x03
 
-HRESULT CreateArchive(char *Path, int Mode, PHKCF phKCF);
+KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF);
 void CloseArchive(HKCF hKCF);
 
 #endif
