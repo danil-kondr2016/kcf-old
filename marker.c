@@ -36,3 +36,30 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 
 	return KCF_ERROR_INVALID_FORMAT;
 }
+
+#ifdef TEST_MARKER
+int main(void)
+{
+	HKCF hKCF;
+	KCFERROR Error;
+
+	fputs("Marker,1,good,",stdout);
+
+	Error = CreateArchive("tests/mk1g.kcf", KCF_MODE_READ, &hKCF);
+	if (Error) {
+		fputs("not_found", stdout);
+		fputs("Failed to conduct test #1\n", stderr);
+		return 1;
+	}
+
+	Error = ScanArchiveForMarker(hKCF);
+	if (Error == KCF_ERROR_OK) {
+		fputs("pass\n", stdout);
+	}
+	else {
+		fputs("fail\n", stdout);
+	}
+
+	return 0;
+}
+#endif
