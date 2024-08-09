@@ -1,4 +1,5 @@
 #include "record.h"
+#include "utils.h"
 
 #include "kcf_impl.h"
 #include <stdlib.h>
@@ -98,39 +99,18 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 
 KCFERROR SkipRecord(HKCF hKCF)
 {
-	int Seekable = 1;
 	struct KcfRecordHeader Header;
 	size_t HeaderSize;
 	uint64_t DataSize;
 	KCFERROR Error;
-
-	if (fseek(hKCF->File, 0L, SEEK_CUR) == -1)
-		Seekable = 0;
 
 	Error = read_record_header(hKCF, &Header, &HeaderSize);
 	if (Error)
 		return Error;
 
 	DataSize = Header.HeadSize - HeaderSize + Header.AddedSize;
-	if (Seekable) {
-		if (fseeko(hKCF->File, DataSize, SEEK_CUR) == -1)
-			return ErrnoToKcf();
-	}
-	else {
-		uint8_t buf[1024];
-		size_t size = DataSize;
-
-		while (DataSize >= sizeof(buf)) {
-			size -= fread(buf, 1, sizeof(buf), hKCF->File);	
-			if (ferror(hKCF->File) || feof(hKCF->File))
-				return KCF_ERROR_READ;
-		}
-		while (size > 0) {
-			size -= fread(buf, 1, to_read, hKCF->File);
-			if (ferror(hKCF->File) || feof(hKCF->File))
-				return KCF_ERROR_READ;
-		}
-	}
+	if (kcf_fskip(hKCF->File, DataSize) == -1)
+		return KCF_ERROR_READ;
 
 	return KCF_ERROR_OK;
 }
