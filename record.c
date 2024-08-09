@@ -171,6 +171,7 @@ KCFERROR ReadAddedData(
 }
 
 #ifdef TEST_READ_RECORD
+#include <string.h>
 int main(void)
 {
 	HKCF hKCF;
@@ -269,6 +270,21 @@ int main(void)
 	}
 	else {
 		fputs("ReadHeader,4,good,fail\n",stdout);
+	}
+
+	{
+		uint8_t buf1[12];
+		size_t n_read;
+
+		Error = ReadAddedData(hKCF, buf1, 12, &n_read);
+		if (Error) {
+			puts("ReadAddedData,5,good,fail");
+		}
+		else if (n_read == 10 &&
+				memcmp(buf1, "0123456789", 10) == 0)
+		{
+			puts("ReadAddedData,5,good,pass");
+		}
 	}
 
 	CloseArchive(hKCF);
