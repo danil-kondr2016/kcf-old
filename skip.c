@@ -3,6 +3,7 @@
 int kcf_fskip(FILE *File, size_t SizeToSkip)
 {
 	int Seekable = 1;
+	size_t to_read;
 
 	if (fseek(File, 0L, SEEK_CUR) == -1)
 		Seekable = 0;
@@ -15,13 +16,13 @@ int kcf_fskip(FILE *File, size_t SizeToSkip)
 		char buf[1024];
 		size_t size = SizeToSkip;
 
-		while (DataSize >= sizeof(buf)) {
+		while (size >= sizeof(buf)) {
 			size -= fread(buf, 1, sizeof(buf), File);	
 			if (ferror(File))
 				return -1;
 		}
 		while (size > 0) {
-			size -= fread(buf, 1, to_read, File);
+			size -= fread(buf, 1, size, File);
 			if (ferror(File))
 				return -1;
 		}
