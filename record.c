@@ -91,6 +91,8 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 	if (!fread(Record->Data, Record->DataSize, 1, hKCF->File))
 		return KCF_ERROR_READ;
 
+	hKCF->AvailableAddedData = Record->Header.AddedSize;
+
 	return KCF_ERROR_OK;
 }
 
@@ -129,6 +131,50 @@ KCFERROR SkipRecord(HKCF hKCF)
 				return KCF_ERROR_READ;
 		}
 	}
+
+	return KCF_ERROR_OK;
+}
+
+bool IsAddedDataAvailable(HKCF hKCF)
+{
+	if (!hKCF)
+		return false;
+
+	return hKCF->AvailableAddedData > 0;
+}
+
+KCFERROR ReadAddedData(
+	HKCF hKCF, 
+	void *Destination, 
+	size_t BufferSize,
+	size_t *BytesRead
+)
+{
+	size_t n_read;
+
+	if (!hKCF)
+		return KCF_ERROR_INVALID_PARAMETER;
+
+	if (!Destination)
+		return KCF_ERROR_INVALID_PARAMETER;
+
+	if (BytesRead)
+		*BytesRead = 0;
+
+	if (hKCF->AvailableAddedData == 0) {
+		return KCF_ERROR_OK;
+	}
+
+	if (hKCF->AvailableAddedData < BufferSize)
+		BufferSize = hKCF->AvailableAddedData;
+
+	n_read = fread(Destination, 1, BufferSize, hKCF->File);
+	if (n_read < BufferSize)
+		return KCF_ERROR_READ;
+
+	hKCF->AvailableAddedData -= BufferSize;
+	if (BytesRead)
+		*BytesRead = n_read;
 
 	return KCF_ERROR_OK;
 }
