@@ -2,7 +2,8 @@
 #ifndef _ERRORS_H_
 #define _ERRORS_H_
 
-#include <stdint.h>
+#include <stdio.h>
+#include <stdbool.h>
 
 enum KcfError
 {
@@ -17,9 +18,18 @@ enum KcfError
 	KCF_ERROR_WRITE,
 	KCF_ERROR_READ,
 	KCF_ERROR_EOF,
+	KCF_ERROR_PREMATURE_EOF,
 };
 typedef enum KcfError KCFERROR;
 
+enum KcfFileSituation
+{
+	KCF_SITUATION_READING_IN_BEGINNING,
+	KCF_SITUATION_READING_IN_MIDDLE,
+	KCF_SITUATION_WRITING,
+};
+
 KCFERROR ErrnoToKcf();
+KCFERROR FileErrorToKcf(FILE *File, enum KcfFileSituation Situation);
 
 #endif
