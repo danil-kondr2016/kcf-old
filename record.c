@@ -170,7 +170,7 @@ KCFERROR ReadAddedData(
 	return KCF_ERROR_OK;
 }
 
-#ifdef TEST_READ_RECORD_HEADER
+#ifdef TEST_READ_RECORD
 int main(void)
 {
 	HKCF hKCF;
@@ -210,6 +210,69 @@ int main(void)
 				Record.Header.HeadFlags,
 				Record.Header.HeadSize);
 	}
+	CloseArchive(hKCF);
+	free(Record.Data);
+
+	Error = CreateArchive("tests/rh2g.kcf", KCF_MODE_READ, &hKCF);
+	if (Error) {
+		fputs("Failed to conduct test #4\n", stderr);
+		return 1;
+	}
+
+	ScanArchiveForMarker(hKCF);
+
+	SkipRecord(hKCF);
+
+	Error = ReadRecord(hKCF, &Record);
+	if (Error) {
+		fputs("ReadHeader,2,good,fail,",stdout);
+		printf("%d\n", Error);
+		return 0;
+	}
+
+	if (Record.Header.HeadCRC == 0x0000
+			&& Record.Header.HeadType == 0x30
+			&& Record.Header.HeadFlags == 0x00
+			&& Record.Header.HeadSize == 0x0010
+			&& Record.DataSize == 10)
+	{
+		puts("ReadHeader,2,good,pass");
+	}
+	else {
+		fputs("ReadHeader,2,good,fail,",stdout);
+	}
+
+	SkipRecord(hKCF);
+	Error = ReadRecord(hKCF, &Record);
+	if (Error) {
+		fputs("ReadHeader,3,good,fail,",stdout);
+		printf("%d\n", Error);
+		return 0;
+	}
+
+	if (Record.Header.HeadType == 0x32) {
+		puts("ReadHeader,3,good,pass");
+	}
+	else {
+		fputs("ReadHeader,3,good,fail\n",stdout);
+	}
+
+	Error = ReadRecord(hKCF, &Record);
+	if (Error) {
+		fputs("ReadHeader,4,good,fail,",stdout);
+		printf("%d\n", Error);
+		return 0;
+	}
+
+	if (Record.Header.HeadType == 0x33 && Record.Header.AddedSize == 10) {
+		puts("ReadHeader,4,good,pass");
+	}
+	else {
+		fputs("ReadHeader,4,good,fail\n",stdout);
+	}
+
+	CloseArchive(hKCF);
+
 
 	return 0;
 }
