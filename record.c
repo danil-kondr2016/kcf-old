@@ -50,8 +50,8 @@ KCFERROR read_record_header(
 	RecordHdr->HeadFlags = buffer[3];
 	RecordHdr->HeadSize = read_u16le(buffer+4);
 
-	if (RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8 != 0) {
-		n_read = fread(buffer+6, 4, 1, hKCF->File);
+	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_4) != 0) {
+		n_read = fread(buffer+6, 1, 4, hKCF->File);
 		if (n_read < 4)
 			return FileErrorToKcf(hKCF->File,
 				KCF_SITUATION_READING_IN_MIDDLE);
@@ -61,16 +61,16 @@ KCFERROR read_record_header(
 		RecordHdr->AddedSize = 0;
 	}
 
-	if (RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8
+	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8)
 			== KCF_HAS_ADDED_SIZE_8) {
-		n_read = fread(buffer+10, 4, 1, hKCF->File);
+		n_read = fread(buffer+10, 1, 4, hKCF->File);
 		if (n_read < 4)
 			return FileErrorToKcf(hKCF->File,
 				KCF_SITUATION_READING_IN_MIDDLE);
 		RecordHdr->AddedSize = read_u64le(buffer+6);
 		hdr_size += 4;
 	}
-	else if (RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8
+	else if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8)
 		       == KCF_HAS_ADDED_SIZE_4) {
 		RecordHdr->AddedSize = read_u32le(buffer+6);
 	}
