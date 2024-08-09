@@ -46,6 +46,8 @@ KCFERROR WriteArchiveMarker(HKCF hKCF);
 KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record);
 KCFERROR SkipRecord(HKCF hKCF);
 
+void ClearRecord(struct KcfRecord *Record);
+
 bool IsAddedDataAvailable(HKCF hKCF);
 KCFERROR ReadAddedData(HKCF hKCF, void *Destination, size_t BufferSize,
 		size_t *BytesRead);
