@@ -20,13 +20,6 @@ KCFERROR ErrnoToKcf()
 	}
 }
 
-enum KcfFileSituation
-{
-	KCF_SITUATION_READING_IN_BEGINNING,
-	KCF_SITUATION_READING_IN_MIDDLE,
-	KCF_SITUATION_WRITING,
-};
-
 KCFERROR FileErrorToKcf(FILE *File, enum KcfFileSituation Situation)
 {
 	if (!File)
