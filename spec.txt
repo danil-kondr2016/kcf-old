@@ -167,3 +167,10 @@ HeadSize            Size = 10 or 14
 
 PackedSize          Compressed data fragment size
 4/8 bytes
+
+## Used CRC32
+
+KCF uses CRC32C (Castagnoli CRC) algorithm which seems to be better than
+traditional CRC32 used in zlib, gzip and other formats.
+
+CRC16 is low-significant bytes of CRC32C.
