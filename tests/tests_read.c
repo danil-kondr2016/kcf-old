@@ -35,7 +35,7 @@ bool test3(void)
 		return 0;
 	}
 
-	if (Record.Header.HeadCRC == 0xFFFF
+	if (Record.Header.HeadCRC == 0xB7E9
 		&& Record.Header.HeadType == 0x41
 		&& Record.Header.HeadFlags == 0x00
 		&& Record.Header.HeadSize == 0x0008

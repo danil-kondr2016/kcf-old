@@ -19,10 +19,11 @@ bool test7(void);
 bool test8(void);
 bool test9(void);
 bool test10(void);
+bool test11(void);
 
 int main(void)
 {
-	plan_tests(10);
+	plan_tests(11);
 	ok(test1(), "file with valid marker");
 	ok(test2(), "file without valid marker");
 	ok(test3(), "read archive header record");
@@ -33,6 +34,7 @@ int main(void)
 	ok(test8(), "record to archive header (valid)");
 	ok(test9(), "record to archive header (invalid by type)");
 	ok(test10(), "record to archive header (invalid by size)");
+	ok(test11(), "validate CRC of archive header");
 
 	if (hKCF)
 		CloseArchive(hKCF);
