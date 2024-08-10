@@ -25,6 +25,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+#include "asprintf.h"
 
 #ifndef PRINTF_FMT
 #define PRINTF_FMT(nfmt, narg)
