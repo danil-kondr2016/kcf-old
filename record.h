@@ -12,6 +12,14 @@
 #define KCF_HAS_ADDED_SIZE_4 0x80
 #define KCF_HAS_ADDED_SIZE_8 0xC0
 
+enum KcfRecordType
+{
+	KCF_MARKER         = '!',
+	KCF_ARCHIVE_HEADER = 'A',
+	KCF_FILE_HEADER    = 'F',
+	KCF_DATA_FRAGMENT  = 'D',
+};
+
 struct KcfRecordHeader
 {
 	uint16_t HeadCRC;
@@ -51,5 +59,12 @@ void ClearRecord(struct KcfRecord *Record);
 bool IsAddedDataAvailable(HKCF hKCF);
 KCFERROR ReadAddedData(HKCF hKCF, void *Destination, size_t BufferSize,
 		size_t *BytesRead);
+
+struct KcfArchiveHeader
+{
+	uint16_t ArchiveVersion;
+};
+
+KCFERROR RecordToArchiveHeader(struct KcfRecord *, struct KcfArchiveHeader *);
 
 #endif
