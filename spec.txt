@@ -20,15 +20,15 @@ HeadCRC             2 bytes        CRC of total record or record part
 HeadType            1 byte         Record type
 HeadFlags           1 byte         Record flags
 HeadSize            2 bytes        Record size
-AddedSize           4/8 bytes      Optional field - added record size
+AddedSize           4/8 bytes      Optional field - added data size
 
 Field `AddedSize` present only if `(HeadFlags & 0x80) != 0` and has
 size of 4 bytes. If `(HeadFlags & 0xC0) == 0xC0`, this field has
 size of 8 bytes.
 
 Total record size is `HeadSize` if `(HeadFlags & 0x80) == 0` and
-`HeadSize+AddedSize` if the field `AddedSize` is present. This size
-includes header fields and equals:
+`HeadSize+AddedSize` if the field `AddedSize` is present. `HeadSize`
+includes header fields size and equals at least:
 
 - 6  if `(HeadFlags & 0x80) == 0`;
 - 10 if `(HeadFlags & 0xC0) == 0x80`;
@@ -41,7 +41,7 @@ includes header fields and equals:
 HeadCRC             Always 0x434B
 2 bytes
 
-HeadType            Type:  0x21
+HeadType            Type:  0x21 ('!')
 1 bytes
 
 HeadFlags           Always 0x1A
@@ -57,13 +57,16 @@ The marker record is actually considered as a fixed byte sequence:
 or
 
     "KC!\x1A\6\0"
+
+For this type of record any flags MUST be ignored since this record
+begins KCF data stream.
     
 ### Archive header
 
 HeadCRC             CRC of fields from HeadType to FormatVersion
 2 bytes
 
-HeadType            Type:  0x41
+HeadType            Type:  0x41 ('A')
 1 byte
 
 HeadFlags           Always 0x00
@@ -80,12 +83,12 @@ FormatVersion       Always 0x0001
 HeadCRC             CRC of all fields from HeadType to end of FileName
 2 bytes
 
-HeadType            Type:  0x46
+HeadType            Type:  0x46 ('F')
 1 byte
 
 HeadFlags           Bit flags:
 1 byte
-                    0x01: compressed data is contained in next
+                    0x01: packed file data MUST be continuted in next
                     record
 
 HeadSize            File header full size including file name
@@ -96,9 +99,9 @@ PackedSize          Optional - compressed data size
 
 FileFlags           Bit flags:
 1 byte
-                    0x01 - has POSIX-style timestamp
+                    0x01: has POSIX-style timestamp
 
-                    0x02 - has FileCRC32 file
+                    0x02: has FileCRC32 field
                     
                     0x04: field `UnpackedSize` is present 
                           and 4 bytes long
@@ -143,12 +146,12 @@ FileNameSize bytes
 HeadCRC             CRC of all fields from HeadType to PackedSize
 2 bytes
 
-HeadType            Type:  0x44
+HeadType            Type:  0x44 ('D')
 1 bytes
 
 HeadFlags           Bit flags:
 1 bytes
-                    0x01: compressed data is contained in next
+                    0x01: packed file data MUST be continuted in next
                     record
                     
                     If cleared, this record is last record of
