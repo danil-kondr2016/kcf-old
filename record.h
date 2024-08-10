@@ -54,6 +54,7 @@ KCFERROR WriteArchiveMarker(HKCF hKCF);
 KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record);
 KCFERROR SkipRecord(HKCF hKCF);
 
+bool ValidateRecord(struct KcfRecord *Record);
 void ClearRecord(struct KcfRecord *Record);
 
 bool IsAddedDataAvailable(HKCF hKCF);
