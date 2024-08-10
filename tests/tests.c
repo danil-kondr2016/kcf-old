@@ -9,24 +9,30 @@
 
 HKCF hKCF = NULL;
 
-bool test1_marker_good(void);
-bool test2_marker_bad(void);
-bool test3_record_header(void);
-bool test4_record_header(void);
-bool test5_record_header(void);
-bool test6_record_header(void);
-bool test7_record_header(void);
+bool test1(void);
+bool test2(void);
+bool test3(void);
+bool test4(void);
+bool test5(void);
+bool test6(void);
+bool test7(void);
+bool test8(void);
+bool test9(void);
+bool test10(void);
 
 int main(void)
 {
-	plan_tests(7);
-	ok(test1_marker_good(), "file with valid marker");
-	ok(test2_marker_bad(), "file without valid marker");
-	ok(test3_record_header(), "read archive header record");
-	ok(test4_record_header(), "skip one record and read");
-	ok(test5_record_header(), "read record with added size");
-	ok(test6_record_header(), "read added data");
-	ok(test7_record_header(), "read chunk after added data");
+	plan_tests(10);
+	ok(test1(), "file with valid marker");
+	ok(test2(), "file without valid marker");
+	ok(test3(), "read archive header record");
+	ok(test4(), "skip one record and read");
+	ok(test5(), "read record with added size");
+	ok(test6(), "read added data");
+	ok(test7(), "read chunk after added data");
+	ok(test8(), "record to archive header (valid)");
+	ok(test9(), "record to archive header (invalid by type)");
+	ok(test10(), "record to archive header (invalid by size)");
 
 	if (hKCF)
 		CloseArchive(hKCF);
@@ -34,7 +40,7 @@ int main(void)
 	return exit_status();
 }
 
-bool test1_marker_good(void)
+bool test1(void)
 {
 	HKCF hKCF;
 	KCFERROR Error;
@@ -58,7 +64,7 @@ cleanup:
 	return result;
 }
 
-bool test2_marker_bad(void)
+bool test2(void)
 {
 	HKCF hKCF;
 	KCFERROR Error;
@@ -82,7 +88,7 @@ cleanup:
 	return result;
 }
 
-bool test3_record_header(void)
+bool test3(void)
 {
 	HKCF hKCF;
 	KCFERROR Error;
@@ -126,7 +132,7 @@ bool test3_record_header(void)
 	return true;
 }
 
-bool test4_record_header(void)
+bool test4(void)
 {
 	KCFERROR Error;
 	struct KcfRecord Record;
@@ -162,7 +168,7 @@ bool test4_record_header(void)
 	return true;
 }
 
-bool test5_record_header(void)
+bool test5(void)
 {
 	KCFERROR Error;
 	struct KcfRecord Record;
@@ -185,7 +191,7 @@ bool test5_record_header(void)
 	return result;
 }
 
-bool test6_record_header(void)
+bool test6(void)
 {
 	uint8_t buf1[12];
 	size_t n_read;
@@ -202,7 +208,7 @@ bool test6_record_header(void)
 	return false;
 }
 
-bool test7_record_header(void)
+bool test7(void)
 {
 	KCFERROR Error;
 	struct KcfRecord Record;
@@ -214,3 +220,80 @@ bool test7_record_header(void)
 	ClearRecord(&Record);
 	return result;
 }
+
+bool test8(void)
+{
+	struct KcfRecord Record = {0};
+	struct KcfArchiveHeader Header = {0};
+	uint8_t Data[2] = {1, 0};
+	KCFERROR Error;
+
+	/* Mocking data */
+	Record.Header.HeadCRC = 0x0000;
+	Record.Header.HeadType = KCF_ARCHIVE_HEADER;
+	Record.Header.HeadFlags = 0x00;
+	Record.Header.HeadSize = 8;
+	Record.Data = Data;
+	Record.DataSize = 2;
+
+	Error = RecordToArchiveHeader(&Record, &Header);
+	if (Error != KCF_ERROR_OK) {
+		diag("Failed to read KCF archive header: Error #%d", Error);
+		return false;
+	}
+
+	if (Header.ArchiveVersion != 1) {
+		diag("Invalid archive version, read %d, should be 1",
+				Header.ArchiveVersion);
+		return false;
+	}
+
+	return true;
+}
+
+bool test9(void)
+{
+	struct KcfRecord Record = {0};
+	struct KcfArchiveHeader Header = {0};
+	uint8_t Data[] = {1, 0};
+	KCFERROR Error;
+
+	/* Mocking data */
+	Record.Header.HeadCRC = 0x0000;
+	Record.Header.HeadType = 0x30;
+	Record.Header.HeadFlags = 0x00;
+	Record.Header.HeadSize = 8;
+	Record.Data = Data;
+	Record.DataSize = 2;
+
+	Error = RecordToArchiveHeader(&Record, &Header);
+	if (Error != KCF_ERROR_INVALID_DATA) {
+		diag("Invalid header has been misrecognized as valid");
+		return false;
+	}
+
+	return true;
+}
+
+bool test10(void)
+{
+	struct KcfRecord Record = {0};
+	struct KcfArchiveHeader Header = {0};
+	KCFERROR Error;
+
+	/* Mocking data */
+	Record.Header.HeadCRC = 0x0000;
+	Record.Header.HeadType = KCF_ARCHIVE_HEADER;
+	Record.Header.HeadFlags = 0x00;
+	Record.Header.HeadSize = 6;
+
+	Error = RecordToArchiveHeader(&Record, &Header);
+	if (Error != KCF_ERROR_INVALID_DATA) {
+		diag("Invalid header has been misrecognized as valid");
+		return false;
+	}
+
+	return true;
+}
+
+
