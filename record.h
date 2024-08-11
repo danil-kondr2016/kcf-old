@@ -30,10 +30,19 @@ struct KcfRecordHeader
 	uint64_t AddedSize;
 };
 
+#define KCF_FILE_HAS_TIMESTAMP  0x01
+#define KCF_FILE_HAS_FILE_CRC32 0x02
+#define KCF_FILE_HAS_UNPACKED_4 0x04
+#define KCF_FILE_HAS_UNPACKED_8 0x0C
+
+#define KCF_DIRECTORY    UINT32_C(0x20524944)
+#define KCF_REGULAR_FILE UINT32_C(0x454C4946)
+
 struct KcfFileHeader
 {
 	char     *FileName;
-	uint64_t Timestamp;
+	uint64_t TimeStamp;
+	uint64_t UnpackedSize;
 	uint32_t FileCRC32;
 	uint32_t FileType;
 	uint32_t CompressionInfo;
@@ -67,5 +76,6 @@ struct KcfArchiveHeader
 };
 
 KCFERROR RecordToArchiveHeader(struct KcfRecord *, struct KcfArchiveHeader *);
+KCFERROR RecordToFileHeader(struct KcfRecord *, struct KcfFileHeader *);
 
 #endif
