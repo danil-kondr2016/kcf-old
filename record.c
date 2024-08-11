@@ -66,6 +66,8 @@ KCFERROR RecordToArchiveHeader(
 	if (!Header)
 		return KCF_ERROR_INVALID_PARAMETER;
 
+	if (!ValidateRecord(&Record))
+		return KCF_ERROR_INVALID_DATA;
 	if (Record->Header.HeadType != KCF_ARCHIVE_HEADER)
 		return KCF_ERROR_INVALID_DATA;
 	if (Record->Header.HeadSize < 8)
