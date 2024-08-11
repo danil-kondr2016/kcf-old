@@ -97,11 +97,11 @@ KCFERROR RecordToFileHeader(
 	Header->FileFlags = *pbuf++;
 	switch (Header->FileFlags & KCF_FILE_HAS_UNPACKED_8) {
 	case KCF_FILE_HAS_UNPACKED_8:
-		Header->CompressedSize = read_u64le(pbuf);
+		Header->UnpackedSize = read_u64le(pbuf);
 		pbuf += 8;
 		break;
 	case KCF_FILE_HAS_UNPACKED_4:
-		Header->CompressedSize = read_u32le(pbuf);
+		Header->UnpackedSize = read_u32le(pbuf);
 		pbuf += 4;
 		break;
 	}
