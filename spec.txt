@@ -21,6 +21,7 @@ HeadType            1 byte         Record type
 HeadFlags           1 byte         Record flags
 HeadSize            2 bytes        Record size
 AddedSize           4/8 bytes      Optional field - added data size
+AddedSizeCRC32      4 bytes        Optional field - added data CRC32
 
 Field `AddedSize` present only if `(HeadFlags & 0x80) != 0` and has
 size of 4 bytes. If `(HeadFlags & 0xC0) == 0xC0`, this field has
@@ -33,6 +34,13 @@ includes header fields size and equals at least:
 - 6  if `(HeadFlags & 0x80) == 0`;
 - 10 if `(HeadFlags & 0xC0) == 0x80`;
 - 14 if `(HeadFlags & 0xC0) == 0xC0`.
+
+Field `AddedSizeCRC32` present only if `(HeadFlags & 0x20) != 0` and has
+size of 4 bytes. If this field is present, `HeadSize` equals at least:
+
+- 10 if `(HeadFlags & 0x80) == 0 && (HeadFlags & 0x20) != 0`;
+- 14 if `(HeadFlags & 0xC0) == 0x80 && (HeadFlags & 0x20) != 0`;
+- 18 if `(HeadFlags & 0xC0) == 0xC0 && (HeadFlags & 0x20) != 0`.
 
 ## Record format
 
@@ -59,7 +67,7 @@ or
     "KC!\x1A\6\0"
 
 For this type of record any flags MUST be ignored since this record
-begins KCF data stream.
+begins KCF data stream. `HeadCRC` MUST NOT be validated.
     
 ### Archive header
 
@@ -94,8 +102,15 @@ HeadFlags           Bit flags:
 HeadSize            File header full size including file name
 2 bytes
 
-PackedSize          Optional - compressed data size
+PackedSize          Optional - compressed data or data fragment size
 4/8 bytes
+                    If 0x01 head flag is set, total compressed data size
+                    is the sum of `PackedSize` value of this record and
+                    `PackedSize` values of subsequent data fragment record
+                    chunks.
+
+PackedDataCRC32     Optional - compressed data fragment CRC32
+4 bytes
 
 FileFlags           Bit flags:
 1 byte
@@ -156,6 +171,8 @@ HeadFlags           Bit flags:
                     
                     If cleared, this record is last record of
                     compressed data.
+
+                    0x20: has PackedDataCRC32 field
                     
                     0x80: has PackedSize field which is 4 bytes
                     long
@@ -165,11 +182,14 @@ HeadFlags           Bit flags:
                     
                     0x80 flag is always set for this type of block.
 
-HeadSize            Size = 10 or 14
+HeadSize            Size = 10, 14, 18
 2 bytes
 
 PackedSize          Compressed data fragment size
 4/8 bytes
+
+PackedDataCRC32     Optional - packed data fragment CRC32
+4 bytes
 
 ## Used CRC32
 
