@@ -9,6 +9,7 @@
 #include "kcf.h"
 #include "errors.h"
 
+#define KCF_HAS_ADDED_DATA_CRC32 0x20
 #define KCF_HAS_ADDED_SIZE_4 0x80
 #define KCF_HAS_ADDED_SIZE_8 0xC0
 
@@ -28,6 +29,7 @@ struct KcfRecordHeader
 	uint16_t HeadSize;
 
 	uint64_t AddedSize;
+	uint32_t AddedDataCRC32;
 };
 
 #define KCF_FILE_HAS_TIMESTAMP  0x01

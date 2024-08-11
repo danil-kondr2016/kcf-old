@@ -3,6 +3,7 @@
 #include "crc32c.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 void ClearRecord(struct KcfRecord *Record)
 {
@@ -16,37 +17,59 @@ void ClearRecord(struct KcfRecord *Record)
 	Record->Header.HeadFlags = 0;
 	Record->Header.HeadSize = 0;
 	Record->Header.AddedSize = 0;
+	Record->Header.AddedDataCRC32 = 0;
 }
 
+/**
+ * TODO create functions write_u16le, write_u32le, write_u64le as
+ * read_u*le ones
+ */
 bool ValidateRecord(struct KcfRecord *Record)
 {
 	uint32_t CRC = 0;
 	uint16_t CRC16 = 0;
-	uint8_t Buffer[12] = {0};
+	uint8_t Buffer[16] = {0};
+	uint8_t *PBuf;
 	size_t HeaderSize = 0;
 
-	Buffer[0] = Record->Header.HeadType;
-	Buffer[1] = Record->Header.HeadFlags;
-	Buffer[2] = (Record->Header.HeadSize) & 0xFF;
-	Buffer[3] = ((Record->Header.HeadSize) >> 8) & 0xFF;
+	PBuf = Buffer;
+	*PBuf++ = Record->Header.HeadType;
+	*PBuf++ = Record->Header.HeadFlags;
+	*PBuf++ = (Record->Header.HeadSize) & 0xFF;
+	*PBuf++ = ((Record->Header.HeadSize) >> 8) & 0xFF;
 
 	HeaderSize = 4;
 	switch (Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_8) {
-	case KCF_HAS_ADDED_SIZE_8:
-		Buffer[11] = ((Record->Header.AddedSize) >> 56) & 0xFF;
-		Buffer[10] = ((Record->Header.AddedSize) >> 48) & 0xFF;
-		Buffer[9]  = ((Record->Header.AddedSize) >> 40) & 0xFF;
-		Buffer[8]  = ((Record->Header.AddedSize) >> 32) & 0xFF;
-		HeaderSize += 4;
 	case KCF_HAS_ADDED_SIZE_4:
-		Buffer[7] = ((Record->Header.AddedSize) >> 24) & 0xFF;
-		Buffer[6] = ((Record->Header.AddedSize) >> 16) & 0xFF;
-		Buffer[5] = ((Record->Header.AddedSize) >> 8)  & 0xFF;
-		Buffer[4] = Record->Header.AddedSize & 0xFF;
+		PBuf[0] = Record->Header.AddedSize & 0xFF;
+		PBuf[1] = ((Record->Header.AddedSize) >> 8)  & 0xFF;
+		PBuf[2] = ((Record->Header.AddedSize) >> 16) & 0xFF;
+		PBuf[3] = ((Record->Header.AddedSize) >> 24) & 0xFF;
 		HeaderSize += 4;
+		PBuf += 4;
+		break;
+	case KCF_HAS_ADDED_SIZE_8:
+		PBuf[0] = Record->Header.AddedSize & 0xFF;
+		PBuf[1] = ((Record->Header.AddedSize) >> 8)  & 0xFF;
+		PBuf[2] = ((Record->Header.AddedSize) >> 16) & 0xFF;
+		PBuf[3] = ((Record->Header.AddedSize) >> 24) & 0xFF;
+		PBuf[4] = ((Record->Header.AddedSize) >> 32) & 0xFF;
+		PBuf[5] = ((Record->Header.AddedSize) >> 40) & 0xFF;
+		PBuf[6] = ((Record->Header.AddedSize) >> 48) & 0xFF;
+		PBuf[7] = ((Record->Header.AddedSize) >> 56) & 0xFF;
+		HeaderSize += 8;
+		PBuf += 8;
 		break;
 	default:
 		break;
+	}
+
+	if (Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32) {
+		PBuf[0] = Record->Header.AddedDataCRC32 & 0xFF;
+		PBuf[1] = ((Record->Header.AddedDataCRC32) >> 8) & 0xFF;
+		PBuf[2] = ((Record->Header.AddedDataCRC32) >> 16) & 0xFF;
+		PBuf[3] = ((Record->Header.AddedDataCRC32) >> 24) & 0xFF;
+		HeaderSize += 4;
 	}
 
 	CRC = crc32c(CRC, Buffer, HeaderSize);
