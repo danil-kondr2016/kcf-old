@@ -19,7 +19,7 @@ bool test8(void)
 	KCFERROR Error;
 
 	/* Mocking data */
-	Record.Header.HeadCRC = 0x0000;
+	Record.Header.HeadCRC = 0xB7E9;
 	Record.Header.HeadType = KCF_ARCHIVE_HEADER;
 	Record.Header.HeadFlags = 0x00;
 	Record.Header.HeadSize = 8;
