@@ -85,3 +85,54 @@ bool test10(void)
 
 	return true;
 }
+
+static const uint8_t test12_data[] = {
+	0x04,
+	0x0F, 0x00, 0x00, 0x00,
+	'F',  'I',  'L',  'E',
+	0x00, 0x00, 0x00, 0x00,
+	0x09, 0x00,
+	'h',  'e',  'l',  'l',  'o',  '.',  't',  'x',  't',
+};
+
+bool test12(void)
+{
+	struct KcfRecord Record = {0};
+	struct KcfFileHeader Header = {0};
+	KCFERROR Error;
+
+	/* Mocking data */
+	Record.Header.HeadCRC = 0x1F6F;
+	Record.Header.HeadType = KCF_FILE_HEADER;
+	Record.Header.HeadFlags = 0x80;
+	Record.Header.HeadSize = sizeof(test12_data) + 10;
+	Record.Header.AddedSize = 15;
+	Record.Data = test12_data;
+	Record.DataSize = sizeof(test12_data);
+
+	Error = RecordToFileHeader(&Record, &Header);
+	if (Error != KCF_ERROR_OK) {
+		diag("Failed to read KCF file header: Error #%d", Error);
+		return false;
+	}
+	
+	diag("FileFlags=%02X,UnpackedSize=%lld,FileType=%08X",
+		Header.FileFlags, Header.UnpackedSize, Header.FileType);
+	diag("CompressionInfo=%08X,FileNameSize=%d,FileName=%s",
+		Header.CompressionInfo, Header.FileNameSize, Header.FileName);
+
+	if (Header.FileFlags != 0x04)
+		return false;
+	if (Header.UnpackedSize != 15)
+		return false;
+	if (Header.FileType != KCF_REGULAR_FILE)
+		return false;
+	if (Header.CompressionInfo != 0)
+		return false;
+	if (Header.FileNameSize != 9)
+		return false;
+	if (strcmp(Header.FileName, "hello.txt") != 0)
+		return false;
+
+	return true;
+}
