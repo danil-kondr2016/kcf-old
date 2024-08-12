@@ -1,5 +1,5 @@
 #include "record.h"
-#include "utils.h"
+#include "bytepack.h"
 
 #include "kcf_impl.h"
 #include <stdlib.h>
@@ -11,7 +11,7 @@ KCFERROR read_record_header(
 		size_t *HeaderSize
 )
 {
-	uint8_t buffer[14] = {0};
+	uint8_t buffer[18] = {0};
 	size_t hdr_size = 0;
 	size_t n_read;
 
@@ -29,35 +29,39 @@ KCFERROR read_record_header(
 		return FileErrorToKcf(hKCF->File,
 			KCF_SITUATION_READING_IN_MIDDLE);
 
-	hdr_size = 6;
-	RecordHdr->HeadCRC = read_u16le(buffer);
-	RecordHdr->HeadType = buffer[2];
-	RecordHdr->HeadFlags = buffer[3];
-	RecordHdr->HeadSize = read_u16le(buffer+4);
+	ReadU16LE(buffer, 6, &hdr_size, &RecordHdr->HeadCRC);
+	ReadU8(buffer, 6, &hdr_size, &RecordHdr->HeadType);
+	ReadU8(buffer, 6, &hdr_size, &RecordHdr->HeadFlags);
+	ReadU16LE(buffer, 6, &hdr_size, &RecordHdr->HeadSize);
+
+	RecordHdr->AddedSize = 0;
 
 	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_4) != 0) {
-		n_read = fread(buffer+6, 1, 4, hKCF->File);
+		n_read = fread(buffer+hdr_size, 1, 4, hKCF->File);
 		if (n_read < 4)
 			return FileErrorToKcf(hKCF->File,
 				KCF_SITUATION_READING_IN_MIDDLE);
-		hdr_size += 4;
-	}
-	else {
-		RecordHdr->AddedSize = 0;
 	}
 
 	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8)
 			== KCF_HAS_ADDED_SIZE_8) {
-		n_read = fread(buffer+10, 1, 4, hKCF->File);
+		n_read = fread(buffer+hdr_size, 1, 4, hKCF->File);
 		if (n_read < 4)
 			return FileErrorToKcf(hKCF->File,
 				KCF_SITUATION_READING_IN_MIDDLE);
-		RecordHdr->AddedSize = read_u64le(buffer+6);
-		hdr_size += 4;
+		ReadU64LE(buffer, 14, &hdr_size, &RecordHdr->AddedSize);
 	}
 	else if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8)
 		       == KCF_HAS_ADDED_SIZE_4) {
-		RecordHdr->AddedSize = read_u32le(buffer+6);
+		ReadU32LE(buffer, 14, &hdr_size, &RecordHdr->AddedSize);
+	}
+
+	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_DATA_CRC32)) {
+		n_read = fread(buffer+hdr_size, 1, 4, hKCF->File);
+		if (n_read < 4)
+			return FileErrorToKcf(hKCF->File,
+				KCF_SITUATION_READING_IN_MIDDLE);
+		ReadU32LE(buffer, 18, &hdr_size, &RecordHdr->AddedDataCRC32);
 	}
 
 	if (HeaderSize)
