@@ -87,9 +87,8 @@ bool test10(void)
 }
 
 static const uint8_t test12_data[] = {
-	0x04,
+	0x04, 'F',
 	0x0F, 0x00, 0x00, 0x00,
-	'F',  'I',  'L',  'E',
 	0x00, 0x00, 0x00, 0x00,
 	0x09, 0x00,
 	'h',  'e',  'l',  'l',  'o',  '.',  't',  'x',  't',
@@ -102,7 +101,7 @@ bool test12(void)
 	KCFERROR Error;
 
 	/* Mocking data */
-	Record.Header.HeadCRC = 0x1F6F;
+	Record.Header.HeadCRC = 0x3E39;
 	Record.Header.HeadType = KCF_FILE_HEADER;
 	Record.Header.HeadFlags = 0x80;
 	Record.Header.HeadSize = sizeof(test12_data) + 10;
@@ -116,7 +115,7 @@ bool test12(void)
 		return false;
 	}
 	
-	diag("FileFlags=%02X,UnpackedSize=%lld,FileType=%08X",
+	diag("FileFlags=%02X,UnpackedSize=%lld,FileType=%02X",
 		Header.FileFlags, Header.UnpackedSize, Header.FileType);
 	diag("CompressionInfo=%08X,FileNameSize=%d,FileName=%s",
 		Header.CompressionInfo, Header.FileNameSize, Header.FileName);

@@ -22,6 +22,8 @@ KCFERROR RecordToFileHeader(
 
 	pbuf = Record->Data;
 	Header->FileFlags = *pbuf++;
+	Header->FileType = *pbuf++;
+
 	switch (Header->FileFlags & KCF_FILE_HAS_UNPACKED_8) {
 	case KCF_FILE_HAS_UNPACKED_8:
 		Header->UnpackedSize = read_u64le(pbuf);
@@ -38,7 +40,6 @@ KCFERROR RecordToFileHeader(
 		pbuf += 4;
 	}
 
-	Header->FileType = read_u32le(pbuf); pbuf += 4;
 	Header->CompressionInfo = read_u32le(pbuf); pbuf += 4;
 
 	if (Header->FileFlags & KCF_FILE_HAS_TIMESTAMP) {

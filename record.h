@@ -37,8 +37,8 @@ struct KcfRecordHeader
 #define KCF_FILE_HAS_UNPACKED_4 0x04
 #define KCF_FILE_HAS_UNPACKED_8 0x0C
 
-#define KCF_DIRECTORY    UINT32_C(0x20524944)
-#define KCF_REGULAR_FILE UINT32_C(0x454C4946)
+#define KCF_DIRECTORY    'd'
+#define KCF_REGULAR_FILE 'F'
 
 struct KcfFileHeader
 {
@@ -46,10 +46,10 @@ struct KcfFileHeader
 	uint64_t TimeStamp;
 	uint64_t UnpackedSize;
 	uint32_t FileCRC32;
-	uint32_t FileType;
 	uint32_t CompressionInfo;
 	uint16_t FileNameSize;
-	uint8_t FileFlags;
+	uint8_t  FileFlags;
+	uint8_t  FileType;
 };
 
 struct KcfRecord
