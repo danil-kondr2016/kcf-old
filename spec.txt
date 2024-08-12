@@ -123,7 +123,13 @@ FileFlags           Bit flags:
                             
                     0x08: if 0x04 is set, `UnpackedSize`
                           is 8 bytes long
-                          
+
+FileType            Type of file
+1 byte
+                    0x46 ('F') - regular file
+
+                    0x64 ('d') - directory
+
 UnpackedSize        Optional - uncompressed file size
 4/8 bytes
                     If this field is absent, file is considered empty
@@ -131,12 +137,6 @@ UnpackedSize        Optional - uncompressed file size
 FileCRC32           Optional - CRC32 of file
 4 bytes
 
-FileType            File type
-4 bytes
-                    0x20524944 - directory (written as "DIR ")
-                    
-                    0x454C4946 - file (written as "FILE")
-                    
 CompressionInfo     Compression info
 4 bytes         
                     Least significant 8 bits are reserved for 
