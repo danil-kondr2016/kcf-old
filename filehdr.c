@@ -1,5 +1,5 @@
 #include "record.h"
-#include "utils.h"
+#include "bytepack.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +9,10 @@ KCFERROR RecordToFileHeader(
 	struct KcfFileHeader *Header
 )
 {
+	ptrdiff_t Offset = 0;
+	size_t Size;
 	uint8_t *pbuf;
+
 	if (!Record)
 		return KCF_ERROR_INVALID_PARAMETER;
 	if (!Header)
@@ -21,39 +24,37 @@ KCFERROR RecordToFileHeader(
 		return KCF_ERROR_INVALID_DATA;
 
 	pbuf = Record->Data;
-	Header->FileFlags = *pbuf++;
-	Header->FileType = *pbuf++;
+	Size = Record->DataSize;
+	ReadU8(pbuf, Size, &Offset, &Header->FileFlags);
+	ReadU8(pbuf, Size, &Offset, &Header->FileType);
 
 	switch (Header->FileFlags & KCF_FILE_HAS_UNPACKED_8) {
 	case KCF_FILE_HAS_UNPACKED_8:
-		Header->UnpackedSize = read_u64le(pbuf);
-		pbuf += 8;
+		ReadU64LE(pbuf, Size, &Offset, &Header->UnpackedSize);
 		break;
 	case KCF_FILE_HAS_UNPACKED_4:
-		Header->UnpackedSize = read_u32le(pbuf);
-		pbuf += 4;
+		ReadU32LE(pbuf, Size, &Offset, &Header->UnpackedSize);
 		break;
 	}
 
 	if (Header->FileFlags & KCF_FILE_HAS_FILE_CRC32) {
-		Header->FileCRC32 = read_u32le(pbuf);
-		pbuf += 4;
+		ReadU32LE(pbuf, Size, &Offset, &Header->FileCRC32);
 	}
 
-	Header->CompressionInfo = read_u32le(pbuf); pbuf += 4;
+	ReadU32LE(pbuf, Size, &Offset, &Header->CompressionInfo);
 
 	if (Header->FileFlags & KCF_FILE_HAS_TIMESTAMP) {
-		Header->TimeStamp = read_u64le(pbuf);
+		ReadU64LE(pbuf, Size, &Offset, &Header->TimeStamp);
 		pbuf += 8;
 	}
 
-	Header->FileNameSize = read_u16le(pbuf); pbuf += 2;
+	ReadU16LE(pbuf, Size, &Offset, &Header->FileNameSize);
 	Header->FileName = malloc(Header->FileNameSize + 1);
 	if (!Header->FileName) {
 		return KCF_ERROR_OUT_OF_MEMORY;
 	}
 	Header->FileName[Header->FileNameSize] = 0;
-	memcpy(Header->FileName, pbuf, Header->FileNameSize);
+	memcpy(Header->FileName, pbuf+Offset, Header->FileNameSize);
 
 	return KCF_ERROR_OK;
 }
