@@ -2,6 +2,7 @@
 
 #include <assert.h>
 
+static
 inline
 bool _read_u8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint8_t *Out)
 {
@@ -16,6 +17,7 @@ bool _read_u8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint8_t *Out)
 }
 
 
+static
 inline
 bool _read_u16(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint16_t *Out)
 {
@@ -30,6 +32,7 @@ bool _read_u16(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint16_t *Out)
 }
 
 
+static
 inline
 bool _read_u32(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint32_t *Out)
 {
@@ -44,6 +47,7 @@ bool _read_u32(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint32_t *Out)
 }
 
 
+static
 inline
 bool _read_u64(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint64_t *Out)
 {
@@ -105,6 +109,7 @@ bool ReadU8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint8_t *Out)
 	return _read_u8(Buffer, Size, Offset, Out);
 }
 
+static
 inline
 bool _write_u8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint8_t In)
 {
@@ -115,6 +120,7 @@ bool _write_u8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint8_t In)
 	return true;
 }
 
+static
 inline
 bool _write_u16(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint16_t In)
 {
@@ -122,6 +128,7 @@ bool _write_u16(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint16_t In)
 		&& _write_u8(Buffer, Size, Offset, (In>>8)&0xFF);
 }
 
+static
 inline
 bool _write_u32(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint32_t In)
 {
@@ -130,6 +137,7 @@ bool _write_u32(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint32_t In)
 }
 
 
+static
 inline
 bool _write_u64(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint64_t In)
 {
