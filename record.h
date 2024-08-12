@@ -80,4 +80,6 @@ struct KcfArchiveHeader
 KCFERROR RecordToArchiveHeader(struct KcfRecord *, struct KcfArchiveHeader *);
 KCFERROR RecordToFileHeader(struct KcfRecord *, struct KcfFileHeader *);
 
+void ClearFileHeader(struct KcfFileHeader *);
+
 #endif
