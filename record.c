@@ -32,7 +32,6 @@ bool ValidateRecord(struct KcfRecord *Record)
 	WriteU8(Buffer, sizeof(Buffer), &Offset, Record->Header.HeadFlags);
 	WriteU16LE(Buffer, sizeof(Buffer), &Offset, Record->Header.HeadSize);
 
-	HeaderSize = 4;
 	switch (Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_8) {
 	case KCF_HAS_ADDED_SIZE_4:
 		WriteU32LE(Buffer, sizeof(Buffer), &Offset, 
