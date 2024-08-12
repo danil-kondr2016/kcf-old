@@ -21,7 +21,7 @@ HeadType            1 byte         Record type
 HeadFlags           1 byte         Record flags
 HeadSize            2 bytes        Record size
 AddedSize           4/8 bytes      Optional field - added data size
-AddedSizeCRC32      4 bytes        Optional field - added data CRC32
+AddedDataCRC32      4 bytes        Optional field - added data CRC32
 
 Field `AddedSize` present only if `(HeadFlags & 0x80) != 0` and has
 size of 4 bytes. If `(HeadFlags & 0xC0) == 0xC0`, this field has
@@ -35,7 +35,7 @@ includes header fields size and equals at least:
 - 10 if `(HeadFlags & 0xC0) == 0x80`;
 - 14 if `(HeadFlags & 0xC0) == 0xC0`.
 
-Field `AddedSizeCRC32` present only if `(HeadFlags & 0x20) != 0` and has
+Field `AddedDataCRC32` present only if `(HeadFlags & 0x20) != 0` and has
 size of 4 bytes. If this field is present, `HeadSize` equals at least:
 
 - 10 if `(HeadFlags & 0x80) == 0 && (HeadFlags & 0x20) != 0`;
