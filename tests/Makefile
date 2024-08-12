@@ -1,6 +1,6 @@
 tests: tests.c tap.c
 	$(CC) $(CFLAGS) -o tests tests.c tap.c \
-		../read.c ../record.c ../readbin.c ../marker.c \
+		../read.c ../record.c ../bytepack.c ../marker.c \
 		../filehdr.c \
 		../kcf.c ../errors.c ../skip.c \
 		../crc32c.c \
