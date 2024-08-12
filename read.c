@@ -1,5 +1,6 @@
 #include "record.h"
 #include "bytepack.h"
+#include "utils.h"
 
 #include "kcf_impl.h"
 #include <stdlib.h>
