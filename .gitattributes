@@ -1,0 +1,4 @@
+tests/*.kcf binary
+*.c text eol=lf
+*.h text eol=lf
+spec.txt text eol=crlf
