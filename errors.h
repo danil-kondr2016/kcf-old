@@ -20,6 +20,8 @@ enum KcfError
 	KCF_ERROR_READ,
 	KCF_ERROR_EOF,
 	KCF_ERROR_PREMATURE_EOF,
+
+	KCF_ERROR_MAX
 };
 typedef enum KcfError KCFERROR;
 
@@ -32,5 +34,6 @@ enum KcfFileSituation
 
 KCFERROR ErrnoToKcf();
 KCFERROR FileErrorToKcf(FILE *File, enum KcfFileSituation Situation);
+const char *GetKcfErrorString(KCFERROR Error);
 
 #endif
