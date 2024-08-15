@@ -155,3 +155,24 @@ void FixRecord(struct KcfRecord *Record)
 
 	Record->Header.HeadCRC = CalculateRecordCRC(Record);
 }
+
+KCFERROR CopyRecord(struct KcfRecord *Destination, struct KcfRecord *Source)
+{
+	assert(Destination);
+	assert(Source);
+
+	Destination->Header = Source->Header;
+	Destination->DataSize = Source->DataSize;
+	if (Source->Data) {
+		Destination->Data = malloc(Source->DataSize);	
+		if (!Destination->Data)
+			return KCF_ERROR_OUT_OF_MEMORY;
+
+		memcpy(Destination->Data, Source->Data, Source->DataSize);
+	}
+	else {
+		Destination->Data = NULL;
+	}
+
+	return KCF_ERROR_OK;
+}

@@ -80,6 +80,7 @@ uint16_t CalculateRecordCRC(struct KcfRecord *Record);
 bool ValidateRecord(struct KcfRecord *Record);
 void FixRecord(struct KcfRecord *Record);
 void ClearRecord(struct KcfRecord *Record);
+KCFERROR CopyRecord(struct KcfRecord *Destination, struct KcfRecord *Source);
 
 bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size);
 
