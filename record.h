@@ -85,6 +85,12 @@ KCFERROR RecordToFileHeader(struct KcfRecord *, struct KcfFileHeader *);
 
 void ClearFileHeader(struct KcfFileHeader *);
 
+/* Flag probing functions */
+
+bool HasAddedSize8(struct KcfRecord *);
+bool HasAddedSize4(struct KcfRecord *);
+bool HasAddedDataCRC32(struct KcfRecord *);
+
 /* Write functions */
 
 KCFERROR WriteArchiveMarker(HKCF hKCF);

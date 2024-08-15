@@ -81,3 +81,21 @@ KCFERROR RecordToArchiveHeader(
 			&Header->ArchiveVersion);
 	return KCF_ERROR_OK;
 }
+
+bool HasAddedSize8(struct KcfRecord *Record)
+{
+	return Record 
+		&& ((Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_8) == KCF_HAS_ADDED_SIZE_8);
+}
+
+bool HasAddedSize4(struct KcfRecord *Record)
+{
+	return Record
+		&& ((Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_8) == KCF_HAS_ADDED_SIZE_4);
+}
+
+bool HasAddedDataCRC32(struct KcfRecord *Record)
+{
+	return Record
+		&& ((Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32) != 0);
+}
