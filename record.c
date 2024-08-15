@@ -6,8 +6,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <assert.h>
+
 void ClearRecord(struct KcfRecord *Record)
 {
+	assert(Record);
+
 	if (Record->Data)
 		free(Record->Data);
 	Record->Data = NULL;
@@ -27,6 +31,8 @@ uint16_t CalculateRecordCRC(struct KcfRecord *Record)
 	uint16_t CRC16 = 0;
 	uint8_t Buffer[16] = {0};
 	ptrdiff_t Offset = 0;
+
+	assert(Record);
 
 	WriteU8(Buffer, sizeof(Buffer), &Offset, Record->Header.HeadType);
 	WriteU8(Buffer, sizeof(Buffer), &Offset, Record->Header.HeadFlags);
@@ -57,7 +63,7 @@ uint16_t CalculateRecordCRC(struct KcfRecord *Record)
 
 bool ValidateRecord(struct KcfRecord *Record)
 {
-	return CalculateRecordCRC(Record) == Record->Header.HeadCRC;
+	return Record && (CalculateRecordCRC(Record) == Record->Header.HeadCRC);
 }
 
 KCFERROR RecordToArchiveHeader(
@@ -131,6 +137,8 @@ bool RecordToBuffer(
 
 void FixRecord(struct KcfRecord *Record)
 {
+	assert(Record);
+
 	Record->Header.HeadSize = 6 + Record->DataSize;
 	switch (Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_8) {
 	case KCF_HAS_ADDED_DATA_4:
