@@ -78,6 +78,7 @@ KCFERROR ReadAddedData(HKCF hKCF, void *Destination, size_t BufferSize,
 
 uint16_t CalculateRecordCRC(struct KcfRecord *Record);
 bool ValidateRecord(struct KcfRecord *Record);
+void FixRecord(struct KcfRecord *Record);
 void ClearRecord(struct KcfRecord *Record);
 
 bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size);
