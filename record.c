@@ -99,3 +99,32 @@ bool HasAddedDataCRC32(struct KcfRecord *Record)
 	return Record
 		&& ((Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32) != 0);
 }
+
+bool RecordToBuffer(
+	struct KcfRecord *Record,
+	uint8_t *Buffer,
+	size_t Size
+)
+{
+	ptrdiff_t Offset = 0;
+	bool result = true;
+
+	if (Size < Record->Header.HeadSize)
+		return false;
+
+	result = result && WriteU16LE(Buffer, Size, &Offset, Record->Header.HeadCRC);
+	result = result && WriteU8(Buffer, Size, &Offset, Record->Header.HeadType);
+	result = result && WriteU8(Buffer, Size, &Offset, Record->Header.HeadFlags);
+	result = result && WriteU16LE(Buffer, Size, &Offset, Record->Header.HeadSize);
+
+	if (HasAddedSize8(Record))
+		result = result && WriteU64LE(Buffer, Size, &Offset, Record->Header.AddedSize);
+	else if (HasAddedSize4(Record))
+		result = result && WriteU32LE(Buffer, Size, &Offset, Record->Header.AddedSize);
+
+	if (HasAddedDataCRC32(Record))	
+		result = result && WriteU32LE(Buffer, Size, &Offset, Record->Header.AddedDataCRC32);
+
+	memcpy(Buffer + Offset, Size - Offset, Record->DataSize);
+	return result;	
+}

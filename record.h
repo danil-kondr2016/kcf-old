@@ -80,6 +80,8 @@ uint16_t CalculateRecordCRC(struct KcfRecord *Record);
 bool ValidateRecord(struct KcfRecord *Record);
 void ClearRecord(struct KcfRecord *Record);
 
+bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size);
+
 KCFERROR RecordToArchiveHeader(struct KcfRecord *, struct KcfArchiveHeader *);
 KCFERROR RecordToFileHeader(struct KcfRecord *, struct KcfFileHeader *);
 
