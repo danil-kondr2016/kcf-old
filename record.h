@@ -65,6 +65,7 @@ KCFERROR WriteArchiveMarker(HKCF hKCF);
 KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record);
 KCFERROR SkipRecord(HKCF hKCF);
 
+uint16_t CalculateRecordCRC(struct KcfRecord *Record);
 bool ValidateRecord(struct KcfRecord *Record);
 void ClearRecord(struct KcfRecord *Record);
 

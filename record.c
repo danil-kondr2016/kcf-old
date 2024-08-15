@@ -21,7 +21,7 @@ void ClearRecord(struct KcfRecord *Record)
 	Record->Header.AddedDataCRC32 = 0;
 }
 
-bool ValidateRecord(struct KcfRecord *Record)
+uint16_t CalculateRecordCRC(struct KcfRecord *Record)
 {
 	uint32_t CRC = 0;
 	uint16_t CRC16 = 0;
@@ -52,7 +52,12 @@ bool ValidateRecord(struct KcfRecord *Record)
 	if (Record->Data && Record->DataSize > 0)
 		CRC = crc32c(CRC, Record->Data, Record->DataSize);
 	CRC16 = CRC & 0xFFFF;
-	return (CRC16 == Record->Header.HeadCRC);
+	return CRC16;
+}
+
+bool ValidateRecord(struct KcfRecord *Record)
+{
+	return CalculateRecordCRC(Record) == Record->Header.HeadCRC;
 }
 
 KCFERROR RecordToArchiveHeader(
