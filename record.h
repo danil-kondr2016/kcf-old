@@ -59,28 +59,34 @@ struct KcfRecord
 	size_t   DataSize;
 };
 
-KCFERROR ScanArchiveForMarker(HKCF hKCF);
-KCFERROR WriteArchiveMarker(HKCF hKCF);
-
-KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record);
-KCFERROR SkipRecord(HKCF hKCF);
-
-uint16_t CalculateRecordCRC(struct KcfRecord *Record);
-bool ValidateRecord(struct KcfRecord *Record);
-void ClearRecord(struct KcfRecord *Record);
-
-bool IsAddedDataAvailable(HKCF hKCF);
-KCFERROR ReadAddedData(HKCF hKCF, void *Destination, size_t BufferSize,
-		size_t *BytesRead);
-
 struct KcfArchiveHeader
 {
 	uint16_t ArchiveVersion;
 };
 
+/* Read functions */
+
+KCFERROR ScanArchiveForMarker(HKCF hKCF);
+KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record);
+KCFERROR SkipRecord(HKCF hKCF);
+
+bool IsAddedDataAvailable(HKCF hKCF);
+KCFERROR ReadAddedData(HKCF hKCF, void *Destination, size_t BufferSize,
+		size_t *BytesRead);
+
+/* Record manipulation functions */
+
+uint16_t CalculateRecordCRC(struct KcfRecord *Record);
+bool ValidateRecord(struct KcfRecord *Record);
+void ClearRecord(struct KcfRecord *Record);
+
 KCFERROR RecordToArchiveHeader(struct KcfRecord *, struct KcfArchiveHeader *);
 KCFERROR RecordToFileHeader(struct KcfRecord *, struct KcfFileHeader *);
 
 void ClearFileHeader(struct KcfFileHeader *);
+
+/* Write functions */
+
+KCFERROR WriteArchiveMarker(HKCF hKCF);
 
 #endif
