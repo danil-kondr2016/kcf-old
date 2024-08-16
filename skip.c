@@ -9,7 +9,7 @@ int kcf_fskip(FILE *File, size_t SizeToSkip)
 		Seekable = 0;
 
 	if (Seekable) {
-		if (fseeko(File, SizeToSkip, SEEK_CUR) == -1)
+		if (fseek(File, SizeToSkip, SEEK_CUR) == -1)
 			return -1;
 	}
 	else {
