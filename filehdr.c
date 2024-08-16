@@ -1,3 +1,5 @@
+#include "errors.h"
+#include "kcf_impl.h"
 #include "record.h"
 #include "bytepack.h"
 
@@ -56,6 +58,65 @@ KCFERROR RecordToFileHeader(
 	Header->FileName[Header->FileNameSize] = 0;
 	memcpy(Header->FileName, pbuf+Offset, Header->FileNameSize);
 
+	return KCF_ERROR_OK;
+}
+
+static
+int get_file_header_data_size(struct KcfFileHeader *Header)
+{
+	int result;
+
+	result = 2; /* FileFlags, FileType */
+	if ((Header->FileFlags & KCF_FILE_HAS_UNPACKED_8) == KCF_FILE_HAS_UNPACKED_8)
+		result += 8; /* UnpackedSize */
+	else if ((Header->FileFlags & KCF_FILE_HAS_UNPACKED_8) == KCF_FILE_HAS_UNPACKED_4)
+		result += 4; /* UnpackedSize */
+
+	if ((Header->FileFlags & KCF_FILE_HAS_FILE_CRC32))
+		result += 4; /* FileCRC32 */
+	if ((Header->FileFlags & KCF_FILE_HAS_TIMESTAMP))
+		result += 8; /* TimeStamp */
+
+	result += 4; /* CompressionInfo */
+	result += 2; /* FileNameSize */
+	result += Header->FileNameSize;
+
+	return result;
+}
+
+KCFERROR FileHeaderToRecord(
+	struct KcfFileHeader *Header, 
+	struct KcfRecord *Record
+)
+{
+	int size;
+	ptrdiff_t offset = 0;
+
+	if (!Record || !Header)
+		return KCF_ERROR_INVALID_PARAMETER;
+
+	Record->Header.HeadType = KCF_FILE_HEADER;
+	size = get_file_header_data_size(Header);
+	Record->Data = malloc(size);
+	if (!Record->Data)
+		return KCF_ERROR_OUT_OF_MEMORY;
+	Record->DataSize = size;
+
+	WriteU8(Record->Data, size, &offset, Header->FileFlags);
+	WriteU8(Record->Data, size, &offset, Header->FileType);
+	if ((Header->FileFlags & KCF_FILE_HAS_UNPACKED_8) == KCF_FILE_HAS_UNPACKED_8)
+		WriteU64LE(Record->Data, size, &offset, Header->UnpackedSize);
+	else if ((Header->FileFlags & KCF_FILE_HAS_UNPACKED_8) == KCF_FILE_HAS_UNPACKED_4)
+		WriteU32LE(Record->Data, size, &offset, Header->UnpackedSize);
+	if ((Header->FileFlags & KCF_FILE_HAS_FILE_CRC32))
+		WriteU32LE(Record->Data, size, &offset, Header->FileCRC32);
+	WriteU32LE(Record->Data, size, &offset, Header->CompressionInfo);
+	if ((Header->FileFlags & KCF_FILE_HAS_TIMESTAMP))
+		WriteU64LE(Record->Data, size, &offset, Header->TimeStamp);
+	WriteU16LE(Record->Data, size, &offset, Header->FileNameSize);
+	memcpy(Record->Data + offset, Header->FileName, Header->FileNameSize);
+
+	FixRecord(Record);
 	return KCF_ERROR_OK;
 }
 

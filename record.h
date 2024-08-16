@@ -102,6 +102,7 @@ KCFERROR ArchiveHeaderToRecord(struct KcfArchiveHeader *, struct KcfRecord *);
 void ClearArchiveHeader(struct KcfArchiveHeader *);
 
 KCFERROR RecordToFileHeader(struct KcfRecord *, struct KcfFileHeader *);
+KCFERROR FileHeaderToRecord(struct KcfFileHeader *, struct KcfRecord *);
 void ClearFileHeader(struct KcfFileHeader *);
 
 /* Flag probing functions */
