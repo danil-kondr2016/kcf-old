@@ -39,7 +39,9 @@ KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record)
 
 	/* Save all information for backpatching */
 	CopyRecord(&hKCF->LastRecord, Record);
-	if (HasAddedSize8(&hKCF->LastRecord) || HasAddedSize4(&hKCF->LastRecord)) {
+	hKCF->HasAddedSize = !!(hKCF->LastRecord.Header.HeadFlags & KCF_HAS_ADDED_SIZE_4);
+	hKCF->HasAddedDataCRC32 = !!(hKCF->LastRecord.Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
+	if (hKCF->HasAddedSize) {
 		hKCF->AddedDataToBeWritten = hKCF->LastRecord.Header.AddedSize;
 		hKCF->WriterState = KCF_STATE_WRITING_ADDED_DATA;
 	}
@@ -111,7 +113,8 @@ KCFERROR WriteAddedData(HKCF hKCF, uint8_t *AddedData, size_t Size)
 		return FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING);
 
 	hKCF->WrittenAddedData += Size;
-	hKCF->AddedDataCRC32 = crc32c(hKCF->AddedDataCRC32, AddedData, Size);
+	if (hKCF->HasAddedDataCRC32)
+		hKCF->AddedDataCRC32 = crc32c(hKCF->AddedDataCRC32, AddedData, Size);
 
 	return KCF_ERROR_OK;
 }
@@ -124,7 +127,7 @@ KCFERROR FinishAddedData(HKCF hKCF)
 		return KCF_ERROR_INVALID_STATE;
 
 	/* If data size is known and no CRC32 of added data is calculated, don't backpatch */
-	if (hKCF->AddedDataToBeWritten > 0 && !HasAddedDataCRC32(&hKCF->LastRecord)) {
+	if (hKCF->AddedDataToBeWritten > 0 && hKCF->HasAddedDataCRC32) {
 		goto cleanup; 
 	}
 
@@ -150,6 +153,8 @@ cleanup:
 	hKCF->WrittenAddedData = 0;
 	hKCF->AddedDataToBeWritten = 0;
 	hKCF->AddedDataCRC32 = 0;
+	hKCF->HasAddedDataCRC32 = false;
+	hKCF->HasAddedSize = false;
 	hKCF->WriterState = KCF_STATE_WRITING_MAIN_RECORD;
 
 	return KCF_ERROR_OK;

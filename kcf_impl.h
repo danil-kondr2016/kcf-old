@@ -24,6 +24,10 @@ struct Kcf
 
 	FILE *File;
 	struct KcfRecord LastRecord;
+	struct {
+		bool HasAddedDataCRC32 : 1;
+		bool HasAddedSize : 1;	
+	};
 	int WriterState;
 };
 
