@@ -7,8 +7,13 @@
 
 struct Kcf
 {
-	FILE *File;
 	uint64_t AvailableAddedData;
+	uint64_t AddedDataAlreadyRead;
+	uint32_t AddedDataCRC32;
+	uint32_t ActualAddedDataCRC32;
+
+	FILE *File;
+	
 };
 
 #endif

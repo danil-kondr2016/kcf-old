@@ -1,6 +1,7 @@
 #include "record.h"
 #include "bytepack.h"
 #include "utils.h"
+#include "crc32c.h"
 
 #include "kcf_impl.h"
 #include <stdlib.h>
@@ -13,7 +14,7 @@ KCFERROR read_record_header(
 )
 {
 	uint8_t buffer[18] = {0};
-	size_t hdr_size = 0;
+	ptrdiff_t hdr_size = 0;
 	size_t n_read;
 
 	if (!hKCF)
@@ -63,6 +64,10 @@ KCFERROR read_record_header(
 			return FileErrorToKcf(hKCF->File,
 				KCF_SITUATION_READING_IN_MIDDLE);
 		ReadU32LE(buffer, 18, &hdr_size, &RecordHdr->AddedDataCRC32);
+		hKCF->AddedDataCRC32 = RecordHdr->AddedDataCRC32;
+	}
+	else {
+		hKCF->AddedDataCRC32 = 0;
 	}
 
 	if (HeaderSize)
@@ -81,6 +86,10 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 	if (!Record)
 		return KCF_ERROR_INVALID_PARAMETER;
 
+	hKCF->AddedDataAlreadyRead = 0;
+	hKCF->AvailableAddedData = 0;
+	hKCF->AddedDataCRC32 = 0;
+	hKCF->ActualAddedDataCRC32 = 0;
 	Error = read_record_header(hKCF, &Record->Header, &HeaderSize);
 	if (Error)
 		return Error;
@@ -156,6 +165,8 @@ KCFERROR ReadAddedData(
 	hKCF->AvailableAddedData -= BufferSize;
 	if (BytesRead)
 		*BytesRead = n_read;
+	hKCF->ActualAddedDataCRC32 = crc32c(hKCF->ActualAddedDataCRC32, Destination, n_read);
+	hKCF->AddedDataAlreadyRead += n_read;
 
 	return KCF_ERROR_OK;
 }
