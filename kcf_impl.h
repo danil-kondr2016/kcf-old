@@ -10,9 +10,12 @@ struct Kcf
 {
 	union {
 		uint64_t AvailableAddedData;
+		uint64_t AddedDataToBeWritten;
+	};
+	union {
+		uint64_t AddedDataAlreadyRead;
 		uint64_t WrittenAddedData;
 	};
-	uint64_t AddedDataAlreadyRead;
 	uint32_t AddedDataCRC32;
 	uint32_t ActualAddedDataCRC32;
 
