@@ -42,7 +42,6 @@
    1.5   7 Dec 2023  Improve register constraints for optimization
  */
 
-#include <pthread.h>
 #include "crc32c.h"
 
 /* CRC-32C (iSCSI) polynomial in reversed bit order. */
@@ -139,7 +138,6 @@ static inline uint32_t crc32c_shift(uint32_t zeros[][256], uint32_t crc) {
 #define SHORT 256
 
 /* Tables for hardware crc that shift a crc by LONG and SHORT zeros. */
-static pthread_once_t crc32c_once_hw = PTHREAD_ONCE_INIT;
 static uint32_t crc32c_long[4][256];
 static uint32_t crc32c_short[4][256];
 
@@ -151,9 +149,6 @@ static void crc32c_init_hw(void) {
 
 /* Compute CRC-32C using the Intel hardware instruction. */
 static uint32_t crc32c_hw(uint32_t crc, void const *buf, size_t len) {
-    /* populate shift tables the first time through */
-    pthread_once(&crc32c_once_hw, crc32c_init_hw);
-
     /* pre-process the crc */
     crc = ~crc;
     uint64_t crc0 = crc;            /* 64-bits for crc32q instruction */
@@ -271,7 +266,6 @@ uint32_t crc32c(uint32_t crc, void const *buf, size_t len) {
 #endif
 
 /* Construct table for software CRC-32C little-endian calculation. */
-static pthread_once_t crc32c_once_little = PTHREAD_ONCE_INIT;
 static uint32_t crc32c_table_little[8][256];
 static void crc32c_init_sw_little(void) {
     for (unsigned n = 0; n < 256; n++) {
@@ -300,7 +294,6 @@ static void crc32c_init_sw_little(void) {
 uint32_t crc32c_sw_little(uint32_t crc, void const *buf, size_t len) {
     unsigned char const *next = buf;
 
-    pthread_once(&crc32c_once_little, crc32c_init_sw_little);
     crc = ~crc;
     while (len && ((uintptr_t)next & 7) != 0) {
         crc = crc32c_table_little[0][(crc ^ *next++) & 0xff] ^ (crc >> 8);
@@ -343,7 +336,6 @@ static inline uint64_t swap(uint64_t x) {
 #endif
 
 /* Construct tables for software CRC-32C big-endian calculation. */
-static pthread_once_t crc32c_once_big = PTHREAD_ONCE_INIT;
 static uint32_t crc32c_table_big_byte[256];
 static uint64_t crc32c_table_big[8][256];
 static void crc32c_init_sw_big(void) {
@@ -374,7 +366,6 @@ static void crc32c_init_sw_big(void) {
 uint32_t crc32c_sw_big(uint32_t crc, void const *buf, size_t len) {
     unsigned char const *next = buf;
 
-    pthread_once(&crc32c_once_big, crc32c_init_sw_big);
     crc = ~crc;
     while (len && ((uintptr_t)next & 7) != 0) {
         crc = crc32c_table_big_byte[(crc ^ *next++) & 0xff] ^ (crc >> 8);
