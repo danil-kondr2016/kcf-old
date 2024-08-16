@@ -54,7 +54,7 @@ KCFERROR read_record_header(
 	}
 	else if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8)
 		       == KCF_HAS_ADDED_SIZE_4) {
-		ReadU32LE(buffer, 14, &hdr_size, &RecordHdr->AddedSize);
+		ReadU32LE(buffer, 14, &hdr_size, &RecordHdr->AddedSizeLow);
 	}
 
 	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_DATA_CRC32)) {

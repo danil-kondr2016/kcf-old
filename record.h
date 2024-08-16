@@ -28,7 +28,20 @@ struct KcfRecordHeader
 	uint8_t  HeadFlags;
 	uint16_t HeadSize;
 
-	uint64_t AddedSize;
+	union {
+		struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			uint32_t AddedSizeLow;
+			uint32_t AddedSizeHigh;
+		#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+			uint32_t AddedSizeHigh;
+			uint32_t AddedSizeLow;
+		#else
+		#error "Unrecognized byte order"
+		#endif
+		};
+		uint64_t AddedSize;
+	};
 	uint32_t AddedDataCRC32;
 };
 
