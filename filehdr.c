@@ -1,5 +1,4 @@
 #include "errors.h"
-#include "kcf_impl.h"
 #include "record.h"
 #include "bytepack.h"
 
@@ -14,6 +13,7 @@ KCFERROR RecordToFileHeader(
 	ptrdiff_t Offset = 0;
 	size_t Size;
 	uint8_t *pbuf;
+	uint32_t tmp4;
 
 	if (!Record)
 		return KCF_ERROR_INVALID_PARAMETER;
@@ -35,7 +35,8 @@ KCFERROR RecordToFileHeader(
 		ReadU64LE(pbuf, Size, &Offset, &Header->UnpackedSize);
 		break;
 	case KCF_FILE_HAS_UNPACKED_4:
-		ReadU32LE(pbuf, Size, &Offset, &Header->UnpackedSize);
+		ReadU32LE(pbuf, Size, &Offset, &tmp4);
+		Header->UnpackedSize = tmp4;
 		break;
 	}
 
@@ -80,8 +81,6 @@ int get_file_header_data_size(struct KcfFileHeader *Header)
 	result += 4; /* CompressionInfo */
 	result += 2; /* FileNameSize */
 	result += Header->FileNameSize;
-
-	return result;
 }
 
 KCFERROR FileHeaderToRecord(
