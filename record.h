@@ -114,5 +114,10 @@ bool HasAddedDataCRC32(struct KcfRecord *);
 /* Write functions */
 
 KCFERROR WriteArchiveMarker(HKCF hKCF);
+KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record);
+KCFERROR WriteRecordWithAddedData(HKCF hKCF, struct KcfRecord *Record, 
+	uint8_t *AddedData, size_t Size);
+KCFERROR WriteAddedData(HKCF hKCF, uint8_t *AddedData, size_t Size);
+KCFERROR FinishAddedData(HKCF hKCF);
 
 #endif
