@@ -131,7 +131,7 @@ bool RecordToBuffer(
 	if (HasAddedDataCRC32(Record))	
 		result = result && WriteU32LE(Buffer, Size, &Offset, Record->Header.AddedDataCRC32);
 
-	memcpy(Buffer + Offset, Size - Offset, Record->DataSize);
+	memcpy(Buffer + Offset, Record->Data, Record->DataSize);
 	return result;	
 }
 
@@ -140,11 +140,11 @@ void FixRecord(struct KcfRecord *Record)
 	assert(Record);
 
 	Record->Header.HeadSize = 6 + Record->DataSize;
-	switch (Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_8) {
-	case KCF_HAS_ADDED_DATA_4:
+	switch (Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_8) {
+	case KCF_HAS_ADDED_SIZE_4:
 		Record->Header.HeadSize += 4;
 		break;
-	case KCF_HAS_ADDED_DATA_8:
+	case KCF_HAS_ADDED_SIZE_8:
 		Record->Header.HeadSize += 8;
 		break;
 	}
