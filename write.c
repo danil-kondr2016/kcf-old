@@ -106,6 +106,8 @@ KCFERROR WriteAddedData(HKCF hKCF, uint8_t *AddedData, size_t Size)
 
 	hKCF->WrittenAddedData += Size;
 	hKCF->AddedDataCRC32 = crc32c(hKCF->AddedDataCRC32, AddedData, Size);
+
+	return KCF_ERROR_OK;
 }
 
 KCFERROR FinishAddedData(HKCF hKCF)
