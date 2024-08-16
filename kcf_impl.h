@@ -27,4 +27,12 @@ struct Kcf
 	int WriterState;
 };
 
+enum KcfWriterState
+{
+	KCF_STATE_WRITING_MARKER,
+	KCF_STATE_WRITING_MAIN_RECORD,
+	KCF_STATE_WRITING_ADDED_DATA,
+};
+
+
 #endif

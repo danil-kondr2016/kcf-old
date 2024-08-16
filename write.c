@@ -5,13 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-enum KcfWriterState
-{
-	KCF_STATE_WRITING_MARKER,
-	KCF_STATE_WRITING_MAIN_RECORD,
-	KCF_STATE_WRITING_ADDED_DATA,
-};
-
 #include "kcf_impl.h"
 
 #ifdef __linux__
