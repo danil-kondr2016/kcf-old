@@ -98,6 +98,7 @@ KCFERROR CopyRecord(struct KcfRecord *Destination, struct KcfRecord *Source);
 bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size);
 
 KCFERROR RecordToArchiveHeader(struct KcfRecord *, struct KcfArchiveHeader *);
+KCFERROR ArchiveHeaderToRecord(struct KcfArchiveHeader *, struct KcfRecord *);
 void ClearArchiveHeader(struct KcfArchiveHeader *);
 
 KCFERROR RecordToFileHeader(struct KcfRecord *, struct KcfFileHeader *);

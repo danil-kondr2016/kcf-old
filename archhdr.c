@@ -1,6 +1,8 @@
+#include "errors.h"
 #include "record.h"
 #include "bytepack.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 KCFERROR RecordToArchiveHeader(
@@ -22,6 +24,24 @@ KCFERROR RecordToArchiveHeader(
 
 	ReadU16LE(Record->Data, Record->DataSize, NULL, 
 			&Header->ArchiveVersion);
+	return KCF_ERROR_OK;
+}
+
+KCFERROR ArchiveHeaderToRecord(
+	struct KcfArchiveHeader *Header,
+	struct KcfRecord *Record
+)
+{
+	if (!Record || !Header)
+		return KCF_ERROR_INVALID_PARAMETER;
+
+	Record->Data = malloc(2);
+	WriteU16LE(Record->Data, 2, NULL, Header->ArchiveVersion);
+	Record->DataSize = 2;
+	Record->Header.HeadFlags = 0;
+	Record->Header.HeadType = KCF_ARCHIVE_HEADER;
+	FixRecord(Record);
+
 	return KCF_ERROR_OK;
 }
 
