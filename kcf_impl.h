@@ -6,6 +6,23 @@
 #include <stdio.h>
 #include <stdint.h>
 
+enum KcfWriterState
+{
+	KCF_STATE_WRITING_IDLE,
+	KCF_STATE_WRITING_MARKER,
+	KCF_STATE_WRITING_MAIN_RECORD,
+	KCF_STATE_WRITING_ADDED_DATA,
+};
+
+enum KcfReaderState
+{
+	KCF_STATE_READING_IDLE,
+	KCF_STATE_SEEKING_MARKER,
+	KCF_STATE_AT_THE_BEGINNING_OF_RECORD,
+	KCF_STATE_AT_MAIN_FIELD_OF_RECORD,
+	KCF_STATE_AT_ADDED_FIELD_OF_RECORD,
+};
+
 struct Kcf
 {
 	union {
@@ -26,17 +43,13 @@ struct Kcf
 	struct KcfRecord LastRecord;
 	struct {
 		bool HasAddedDataCRC32 : 1;
-		bool HasAddedSize : 1;	
+		bool HasAddedSize : 1;
+		bool IsWriting : 1;
 	};
-	int WriterState;
+	union {
+		enum KcfWriterState WriterState;
+		enum KcfReaderState ReaderState;
+	};
 };
-
-enum KcfWriterState
-{
-	KCF_STATE_WRITING_MARKER,
-	KCF_STATE_WRITING_MAIN_RECORD,
-	KCF_STATE_WRITING_ADDED_DATA,
-};
-
 
 #endif

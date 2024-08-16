@@ -1,3 +1,4 @@
+#include "errors.h"
 #include "record.h"
 #include "kcf.h"
 
@@ -15,6 +16,9 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 	uint8_t buf[6] = {0};
 	size_t n_read = 0;
 
+	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_SEEKING_MARKER)
+		return KCF_ERROR_INVALID_STATE;
+
 	do {
 		if (buf[0] == MARKER_1
 			&& buf[1] == MARKER_2
@@ -22,7 +26,7 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 			&& buf[3] == MARKER_4
 			&& buf[4] == MARKER_5
 			&& buf[5] == MARKER_6)
-			return KCF_ERROR_OK;
+			goto ok;
 
 		buf[0] = buf[1];
 		buf[1] = buf[2];
@@ -38,15 +42,23 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 		return KCF_ERROR_READ;
 
 	return KCF_ERROR_INVALID_FORMAT;
+ok:
+	hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
+	return KCF_ERROR_OK;
 }
 
 KCFERROR WriteArchiveMarker(HKCF hKCF)
 {
+	if (!hKCF->IsWriting || hKCF->WriterState != KCF_STATE_WRITING_MARKER)
+		return KCF_ERROR_INVALID_STATE;
+
 	if (fputc(MARKER_1, hKCF->File) == EOF) return KCF_ERROR_WRITE;
 	if (fputc(MARKER_2, hKCF->File) == EOF) return KCF_ERROR_WRITE;
 	if (fputc(MARKER_3, hKCF->File) == EOF) return KCF_ERROR_WRITE;
 	if (fputc(MARKER_4, hKCF->File) == EOF) return KCF_ERROR_WRITE;
 	if (fputc(MARKER_5, hKCF->File) == EOF) return KCF_ERROR_WRITE;
 	if (fputc(MARKER_6, hKCF->File) == EOF) return KCF_ERROR_WRITE;
+
+	hKCF->WriterState = KCF_STATE_WRITING_IDLE;
 	return KCF_ERROR_OK;
 }

@@ -23,6 +23,11 @@ KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record)
 {
 	uint8_t *buffer;
 
+	if (!hKCF->IsWriting)
+		return KCF_ERROR_INVALID_STATE;
+	if (hKCF->WriterState == KCF_STATE_WRITING_IDLE || hKCF->WriterState == KCF_STATE_WRITING_MARKER)
+		return KCF_ERROR_INVALID_STATE;
+
 	if (hKCF->WriterState == KCF_STATE_WRITING_ADDED_DATA)
 		FinishAddedData(hKCF);
 
@@ -55,6 +60,11 @@ KCFERROR WriteRecordWithAddedData(HKCF hKCF, struct KcfRecord *Record,
 {
 	uint8_t *buffer;
 
+	if (!hKCF->IsWriting)
+		return KCF_ERROR_INVALID_STATE;
+	if (hKCF->WriterState == KCF_STATE_WRITING_IDLE || hKCF->WriterState == KCF_STATE_WRITING_MARKER)
+		return KCF_ERROR_INVALID_STATE;
+	
 	if (hKCF->WriterState == KCF_STATE_WRITING_ADDED_DATA)
 		FinishAddedData(hKCF);
 
@@ -95,7 +105,7 @@ KCFERROR WriteRecordWithAddedData(HKCF hKCF, struct KcfRecord *Record,
 
 KCFERROR WriteAddedData(HKCF hKCF, uint8_t *AddedData, size_t Size)
 {
-	if (hKCF->WriterState != KCF_STATE_WRITING_ADDED_DATA)
+	if (!hKCF->IsWriting || hKCF->WriterState != KCF_STATE_WRITING_ADDED_DATA)
 		return KCF_ERROR_INVALID_STATE;
 
 	if (hKCF->AddedDataToBeWritten > 0) {
@@ -123,7 +133,7 @@ KCFERROR FinishAddedData(HKCF hKCF)
 {
 	uint8_t *buffer;
 
-	if (hKCF->WriterState != KCF_STATE_WRITING_ADDED_DATA)
+	if (!hKCF->IsWriting || hKCF->WriterState != KCF_STATE_WRITING_ADDED_DATA)
 		return KCF_ERROR_INVALID_STATE;
 
 	/* If data size is known and no CRC32 of added data is calculated, don't backpatch */

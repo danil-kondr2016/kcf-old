@@ -1,3 +1,4 @@
+#include "errors.h"
 #include "record.h"
 #include "bytepack.h"
 #include "utils.h"
@@ -5,6 +6,7 @@
 
 #include "kcf_impl.h"
 #include <stdlib.h>
+#include <assert.h>
 
 static
 KCFERROR read_record_header(
@@ -17,11 +19,8 @@ KCFERROR read_record_header(
 	ptrdiff_t hdr_size = 0;
 	size_t n_read;
 
-	if (!hKCF)
-		return KCF_ERROR_INVALID_PARAMETER;
-
-	if (!RecordHdr)
-		return KCF_ERROR_INVALID_PARAMETER;
+	assert(hKCF);
+	assert(RecordHdr);
 
 	n_read = fread(buffer, 1, 6, hKCF->File);
 	if (n_read == 0)
@@ -72,6 +71,7 @@ KCFERROR read_record_header(
 
 	if (HeaderSize)
 		*HeaderSize = hdr_size;
+	hKCF->ReaderState = KCF_STATE_AT_MAIN_FIELD_OF_RECORD;
 	return KCF_ERROR_OK;
 }
 
@@ -85,6 +85,9 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 
 	if (!Record)
 		return KCF_ERROR_INVALID_PARAMETER;
+
+	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_AT_THE_BEGINNING_OF_RECORD)
+		return KCF_ERROR_INVALID_STATE;
 
 	hKCF->AddedDataAlreadyRead = 0;
 	hKCF->AvailableAddedData = 0;
@@ -100,7 +103,12 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 		return KCF_ERROR_OUT_OF_MEMORY;
 
 	if (!fread(Record->Data, Record->DataSize, 1, hKCF->File))
-		return KCF_ERROR_READ;
+		return FileErrorToKcf(hKCF->File, KCF_SITUATION_READING_IN_MIDDLE);
+
+	if (HasAddedSize4(Record) || HasAddedSize8(Record))
+		hKCF->ReaderState = KCF_STATE_AT_ADDED_FIELD_OF_RECORD;
+	else
+		hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
 
 	hKCF->AvailableAddedData = Record->Header.AddedSize;
 
@@ -114,11 +122,22 @@ KCFERROR SkipRecord(HKCF hKCF)
 	uint64_t DataSize;
 	KCFERROR Error;
 
-	Error = read_record_header(hKCF, &Header, &HeaderSize);
-	if (Error)
-		return Error;
+	if (hKCF->IsWriting)
+		return KCF_ERROR_INVALID_STATE;
+	if (hKCF->ReaderState == KCF_STATE_AT_THE_BEGINNING_OF_RECORD) {
+		Error = read_record_header(hKCF, &Header, &HeaderSize);
+		if (Error)
+			return Error;
 
-	DataSize = Header.HeadSize - HeaderSize + Header.AddedSize;
+		DataSize = Header.HeadSize - HeaderSize + Header.AddedSize;
+	}
+	else if (hKCF->ReaderState == KCF_STATE_AT_ADDED_FIELD_OF_RECORD) {
+		DataSize = hKCF->AvailableAddedData;
+	}
+	else {
+		return KCF_ERROR_INVALID_STATE;
+	}
+
 	if (kcf_fskip(hKCF->File, DataSize) == -1)
 		return KCF_ERROR_READ;
 
@@ -148,6 +167,9 @@ KCFERROR ReadAddedData(
 	if (!Destination)
 		return KCF_ERROR_INVALID_PARAMETER;
 
+	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_AT_ADDED_FIELD_OF_RECORD)
+		return KCF_ERROR_INVALID_STATE;
+
 	if (BytesRead)
 		*BytesRead = 0;
 
@@ -167,6 +189,9 @@ KCFERROR ReadAddedData(
 		*BytesRead = n_read;
 	hKCF->ActualAddedDataCRC32 = crc32c(hKCF->ActualAddedDataCRC32, Destination, n_read);
 	hKCF->AddedDataAlreadyRead += n_read;
+
+	if (hKCF->AvailableAddedData == 0)
+		hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
 
 	return KCF_ERROR_OK;
 }

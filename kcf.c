@@ -1,6 +1,5 @@
 #include "kcf.h"
 
-#include <errno.h>
 #include <stdlib.h>
 
 #include "kcf_impl.h"
@@ -9,6 +8,7 @@ KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
 {
 	HKCF Result = NULL;
 	char *ModeString = NULL;
+	int KcfModeValue = 0;
 
 	if (!phKCF)
 		return KCF_ERROR_INVALID_PARAMETER;
@@ -37,6 +37,14 @@ KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
 	Result->File = fopen(Path, ModeString);
 	if (!Result->File) {
 		return ErrnoToKcf();
+	}
+
+	if (Mode == KCF_MODE_CREATE) {
+		Result->IsWriting = true;
+		Result->WriterState = KCF_STATE_WRITING_MARKER;
+	}
+	else {
+		Result->ReaderState = KCF_STATE_SEEKING_MARKER;
 	}
 
 	*phKCF = Result;
