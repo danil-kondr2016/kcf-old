@@ -81,6 +81,8 @@ int get_file_header_data_size(struct KcfFileHeader *Header)
 	result += 4; /* CompressionInfo */
 	result += 2; /* FileNameSize */
 	result += Header->FileNameSize;
+
+	return result;
 }
 
 KCFERROR FileHeaderToRecord(
