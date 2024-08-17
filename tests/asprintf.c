@@ -9,6 +9,10 @@
 #define va_copy(dst, src) (dst = src)
 #endif
 
+#ifndef EOTHER
+#define EOTHER 131
+#endif
+
 #ifdef __cplusplus
 extern "C"
 #endif

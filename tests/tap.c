@@ -28,7 +28,17 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <process.h>
+
+#define flockfile _lock_file
+#define funlockfile _unlock_file
+
+#else
 #include <unistd.h>
+#define _getpid getpid
+#endif
 
 #include "asprintf.h"
 #include "tap.h"
@@ -200,7 +210,7 @@ static void
 _cleanup(void)
 {
 	/* If we forked, don't do cleanup in child! */
-	if (getpid() != test_pid)
+	if (_getpid() != test_pid)
 		return;
 
 	LOCK;
@@ -262,7 +272,7 @@ _tap_init(void)
 	static int run_once = 0;
 
 	if(!run_once) {
-		test_pid = getpid();
+		test_pid = _getpid();
 		atexit(_cleanup);
 
 		/* stdout needs to be unbuffered so that the output appears
