@@ -103,9 +103,16 @@ bool test5(void)
 
 	SkipRecord(hKCF);
 	Error = ReadRecord(hKCF, &Record);
+	diag("Error #%d (%s)", Error, GetKcfErrorString(Error));
 	if (Error) {
 		return false;
 	}
+
+	diag("%04X %02X %02X %04X",
+		Record.Header.HeadCRC,
+		Record.Header.HeadType,
+		Record.Header.HeadFlags,
+		Record.Header.HeadSize);
 
 	if (Record.Header.HeadType == 0x32 && Record.Header.AddedSize == 10) {
 		result = true;
