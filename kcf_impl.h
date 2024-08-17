@@ -48,6 +48,7 @@ struct Kcf
 		bool HasAddedDataCRC32 : 1;
 		bool HasAddedSize : 1;
 		bool IsWriting : 1;
+		bool IsWritable : 1;
 	};
 	union {
 		enum KcfWriterState WriterState;

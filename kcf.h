@@ -17,4 +17,7 @@ typedef struct Kcf *HKCF, **PHKCF;
 KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF);
 void CloseArchive(HKCF hKCF);
 
+bool StartWritingToArchive(HKCF hKCF);
+bool StartReadingFromArchive(HKCF hKCF);
+
 #endif
