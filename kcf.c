@@ -1,5 +1,4 @@
 #include "kcf.h"
-#include "record.h"
 
 #include <stdlib.h>
 

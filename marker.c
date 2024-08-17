@@ -1,5 +1,4 @@
 #include "errors.h"
-#include "record.h"
 #include "kcf.h"
 
 #include "kcf_impl.h"

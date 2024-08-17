@@ -1,6 +1,5 @@
 #include "crc32c.h"
 #include "errors.h"
-#include "record.h"
 #include "kcf.h"
 #include <stdio.h>
 #include <stdlib.h>

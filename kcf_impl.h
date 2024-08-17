@@ -1,4 +1,5 @@
 #pragma once
+#include "kcf.h"
 #include "errors.h"
 #include "record.h"
 #ifndef _KCF_IMPL_H_
