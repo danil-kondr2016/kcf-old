@@ -22,18 +22,25 @@ KCFERROR read_record_header(
 	assert(hKCF);
 	assert(RecordHdr);
 
+	trace_kcf_msg("read_record_header begin");
+	trace_kcf_state(hKCF);
+
 	n_read = fread(buffer, 1, 6, hKCF->File);
 	if (n_read == 0)
-		return FileErrorToKcf(hKCF->File, 
-			KCF_SITUATION_READING_IN_BEGINNING);
+		return trace_kcf_error(FileErrorToKcf(hKCF->File, 
+			KCF_SITUATION_READING_IN_BEGINNING));
 	if (n_read < 6)
-		return FileErrorToKcf(hKCF->File,
-			KCF_SITUATION_READING_IN_MIDDLE);
+		return trace_kcf_error(FileErrorToKcf(hKCF->File,
+			KCF_SITUATION_READING_IN_MIDDLE));
 
 	ReadU16LE(buffer, 6, &hdr_size, &RecordHdr->HeadCRC);
 	ReadU8(buffer, 6, &hdr_size, &RecordHdr->HeadType);
 	ReadU8(buffer, 6, &hdr_size, &RecordHdr->HeadFlags);
 	ReadU16LE(buffer, 6, &hdr_size, &RecordHdr->HeadSize);
+
+	trace_kcf_msg("read_record_header %04X %02X %02X %04X", 
+		RecordHdr->HeadCRC, RecordHdr->HeadType, 
+		RecordHdr->HeadFlags, RecordHdr->HeadSize);
 
 	RecordHdr->AddedSize = 0;
 
@@ -67,11 +74,16 @@ KCFERROR read_record_header(
 	}
 	else {
 		hKCF->AddedDataCRC32 = 0;
+		RecordHdr->AddedDataCRC32 = 0;
 	}
+
+	trace_kcf_msg("read_record_header %016llX %08X", RecordHdr->AddedSize, RecordHdr->AddedDataCRC32);
 
 	if (HeaderSize)
 		*HeaderSize = hdr_size;
 	hKCF->ReaderState = KCF_STATE_AT_MAIN_FIELD_OF_RECORD;
+	trace_kcf_state(hKCF);
+	trace_kcf_msg("read_record_header end");
 	return KCF_ERROR_OK;
 }
 
@@ -86,8 +98,11 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 	if (!Record)
 		return KCF_ERROR_INVALID_PARAMETER;
 
+	trace_kcf_msg("ReadRecord begin");
+	trace_kcf_state(hKCF);
+
 	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_AT_THE_BEGINNING_OF_RECORD)
-		return KCF_ERROR_INVALID_STATE;
+		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
 	hKCF->AddedDataAlreadyRead = 0;
 	hKCF->AvailableAddedData = 0;
@@ -100,10 +115,12 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 
 	Record->Data = malloc(Record->DataSize);
 	if (!Record->Data)
-		return KCF_ERROR_OUT_OF_MEMORY;
+		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
 	if (!fread(Record->Data, Record->DataSize, 1, hKCF->File))
-		return FileErrorToKcf(hKCF->File, KCF_SITUATION_READING_IN_MIDDLE);
+		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_READING_IN_MIDDLE));
+
+	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
 
 	if (HasAddedSize4(Record) || HasAddedSize8(Record))
 		hKCF->ReaderState = KCF_STATE_AT_ADDED_FIELD_OF_RECORD;
@@ -111,6 +128,9 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 		hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
 
 	hKCF->AvailableAddedData = Record->Header.AddedSize;
+
+	trace_kcf_state(hKCF);
+	trace_kcf_msg("ReadRecord end");
 
 	return KCF_ERROR_OK;
 }
@@ -121,6 +141,9 @@ KCFERROR SkipRecord(HKCF hKCF)
 	size_t HeaderSize;
 	uint64_t DataSize;
 	KCFERROR Error;
+
+	trace_kcf_msg("SkipRecord begin");
+	trace_kcf_state(hKCF);
 
 	if (hKCF->IsWriting)
 		return KCF_ERROR_INVALID_STATE;
@@ -140,6 +163,11 @@ KCFERROR SkipRecord(HKCF hKCF)
 
 	if (kcf_fskip(hKCF->File, DataSize) == -1)
 		return KCF_ERROR_READ;
+
+	hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
+
+	trace_kcf_state(hKCF);
+	trace_kcf_msg("SkipRecord end");
 
 	return KCF_ERROR_OK;
 }
@@ -167,13 +195,19 @@ KCFERROR ReadAddedData(
 	if (!Destination)
 		return KCF_ERROR_INVALID_PARAMETER;
 
+	trace_kcf_msg("ReadAddedData begin");
+	trace_kcf_state(hKCF);
+
 	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_AT_ADDED_FIELD_OF_RECORD)
-		return KCF_ERROR_INVALID_STATE;
+		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
 	if (BytesRead)
 		*BytesRead = 0;
 
 	if (hKCF->AvailableAddedData == 0) {
+		hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
+		trace_kcf_state(hKCF);
+		trace_kcf_msg("ReadAddedData end");
 		return KCF_ERROR_OK;
 	}
 
@@ -192,6 +226,8 @@ KCFERROR ReadAddedData(
 
 	if (hKCF->AvailableAddedData == 0)
 		hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
+	trace_kcf_state(hKCF);
+	trace_kcf_msg("ReadAddedData end");
 
 	return KCF_ERROR_OK;
 }
