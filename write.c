@@ -196,3 +196,18 @@ cleanup:
 
 	return KCF_ERROR_OK;
 }
+
+KCFERROR WriteArchiveHeader(HKCF hKCF, int Reserved)
+{
+	KCFERROR Error;
+	struct KcfArchiveHeader ArchiveHeader;
+	struct KcfRecord Record;
+
+	(void)Reserved;
+	ArchiveHeader.ArchiveVersion = 1;
+	ArchiveHeaderToRecord(&ArchiveHeader, &Record);
+	
+	Error = WriteRecord(hKCF, &Record);
+	ClearRecord(&Record);
+	return Error;
+}

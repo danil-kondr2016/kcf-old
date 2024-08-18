@@ -104,4 +104,7 @@ KCFERROR WriteAddedData(HKCF hKCF, uint8_t *AddedData, size_t Size);
  */
 KCFERROR FinishAddedData(HKCF hKCF);
 
+KCFERROR WriteArchiveHeader(HKCF hKCF, int Reserved);
+
+
 #endif
