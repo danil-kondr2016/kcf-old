@@ -17,7 +17,7 @@ TODO list
 
 - [X] Chunk handling
 
-- [ ] Utility for packing and unpacking KCF archives
+- [X] Utility for packing and unpacking KCF archives
 
 - [ ] Compression and decompression
 
