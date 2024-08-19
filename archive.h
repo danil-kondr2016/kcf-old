@@ -106,7 +106,4 @@ KCFERROR FinishAddedData(HKCF hKCF);
 
 KCFERROR WriteArchiveHeader(HKCF hKCF, int Reserved);
 
-#define KCF_PACKING_JUST_STORE 0
-KCFERROR PackFile(HKCF hKCF, char *FileName, int PackingMode);
-
 #endif

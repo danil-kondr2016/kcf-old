@@ -3,6 +3,7 @@
 #include "archive.h"
 #include "kcf_impl.h"
 #include "record.h"
+#include "pack.h"
 
 #include <string.h>
 #if !defined(_WIN32) || !defined(_WIN64)
@@ -61,6 +62,7 @@ KCFERROR PackFile(HKCF hKCF, char *FileName, int PackingMode)
 		return KCF_ERROR_FILE_NOT_FOUND;
 	}
 
+	FileHeader.FileType = KCF_REGULAR_FILE;
 	FileHeader.FileNameSize = strlen(FileName);
 	FileHeader.FileName = _strdup(FileName);
 	FileHeader.UnpackedSize = get_file_size(File);
