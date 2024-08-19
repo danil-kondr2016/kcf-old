@@ -15,7 +15,7 @@ TODO list
 
 ### For KCF archive format version 1
 
-- [+] Chunk handling
+- [X] Chunk handling
 
 - [ ] Utility for packing and unpacking KCF archives
 
