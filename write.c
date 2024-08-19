@@ -23,6 +23,7 @@ KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record)
 	uint8_t *buffer;
 
 	trace_kcf_msg("WriteRecord begin");
+	trace_kcf_record(Record);
 	trace_kcf_state(hKCF);
 
 	if (!hKCF->IsWriting)
@@ -47,8 +48,8 @@ KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record)
 		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));
 
 	/* Save all information for backpatching */
-	hKCF->HasAddedSize = !!(hKCF->LastRecord.Header.HeadFlags & KCF_HAS_ADDED_SIZE_4);
-	hKCF->HasAddedDataCRC32 = !!(hKCF->LastRecord.Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
+	hKCF->HasAddedSize = !!(Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_4);
+	hKCF->HasAddedDataCRC32 = !!(Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
 	if (hKCF->HasAddedSize) {
 		CopyRecord(&hKCF->LastRecord, Record);
 		hKCF->AddedDataToBeWritten = hKCF->LastRecord.Header.AddedSize;
@@ -161,7 +162,7 @@ KCFERROR FinishAddedData(HKCF hKCF)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
 	/* If data size is known and no CRC32 of added data is calculated, don't backpatch */
-	if (hKCF->AddedDataToBeWritten > 0 && hKCF->HasAddedDataCRC32) {
+	if (hKCF->AddedDataToBeWritten > 0 && !hKCF->HasAddedDataCRC32) {
 		goto cleanup; 
 	}
 
@@ -175,6 +176,7 @@ KCFERROR FinishAddedData(HKCF hKCF)
 	buffer = malloc(hKCF->LastRecord.Header.HeadSize);
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
+	RecordToBuffer(&hKCF->LastRecord, buffer, hKCF->LastRecord.Header.HeadSize);
 
 	if (!fwrite(buffer, hKCF->LastRecord.Header.HeadSize, 1, hKCF->File))
 		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));

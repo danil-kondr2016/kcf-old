@@ -115,4 +115,17 @@ KCFERROR trace_kcf_error(KCFERROR Error)
 #define trace_kcf_error(e) (e)
 #endif
 
+static inline
+void trace_kcf_record(struct KcfRecord *Record)
+{
+	trace_kcf_msg("REC %04X %02X %02X %5u %20llu %08X", 
+		Record->Header.HeadCRC,
+		Record->Header.HeadType,
+		Record->Header.HeadFlags,
+		Record->Header.HeadSize,
+		Record->Header.AddedSize,
+		Record->Header.AddedDataCRC32);
+	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
+}
+
 #endif
