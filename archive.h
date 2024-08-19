@@ -1,6 +1,6 @@
 #pragma once
-#ifndef _KCF_H_
-#define _KCF_H_
+#ifndef _ARCHIVE_H_
+#define _ARCHIVE_H_
 
 #include <stdio.h>
 #include <stdint.h>

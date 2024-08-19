@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../kcf.h"
+#include "../archive.h"
 #include "../record.h"
 
 extern HKCF hKCF;
