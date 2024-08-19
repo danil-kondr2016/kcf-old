@@ -1,9 +1,10 @@
 #pragma once
+#ifndef _KCF_IMPL_H_
+#define _KCF_IMPL_H_
+
 #include "archive.h"
 #include "errors.h"
 #include "record.h"
-#ifndef _KCF_IMPL_H_
-#define _KCF_IMPL_H_
 
 #include <stdio.h>
 #include <stdint.h>
@@ -55,6 +56,8 @@ struct Kcf
 		enum KcfWriterState WriterState;
 		enum KcfReaderState ReaderState;
 	};
+
+	struct KcfFileHeader CurrentFile;
 };
 
 #ifdef _KCF_TRACE

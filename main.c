@@ -13,7 +13,7 @@ static int unpack(int argc, char **argv);
 
 static int help(void)
 {
-    puts("KCF version 0.0.1");
+    puts("KCF version 0.0.2");
     puts("Created by Danila A. Kondratenko");
     puts("");
     puts("Usage: ");

@@ -138,11 +138,16 @@ static inline uint32_t crc32c_shift(uint32_t zeros[][256], uint32_t crc) {
 #define SHORT 256
 
 /* Tables for hardware crc that shift a crc by LONG and SHORT zeros. */
+static int crc32c_hw_initialized = 0;
 static uint32_t crc32c_long[4][256];
 static uint32_t crc32c_short[4][256];
 
 /* Initialize tables for shifting crcs. */
 static void crc32c_init_hw(void) {
+    if (crc32c_hw_initialized)
+        return;
+    
+    crc32c_hw_initialized = 1;
     crc32c_zeros(crc32c_long, LONG);
     crc32c_zeros(crc32c_short, SHORT);
 }
@@ -150,6 +155,7 @@ static void crc32c_init_hw(void) {
 /* Compute CRC-32C using the Intel hardware instruction. */
 static uint32_t crc32c_hw(uint32_t crc, void const *buf, size_t len) {
     /* pre-process the crc */
+    crc32c_init_hw();
     crc = ~crc;
     uint64_t crc0 = crc;            /* 64-bits for crc32q instruction */
 
@@ -266,8 +272,13 @@ uint32_t crc32c(uint32_t crc, void const *buf, size_t len) {
 #endif
 
 /* Construct table for software CRC-32C little-endian calculation. */
+static int crc32c_little_initialized = 0;
 static uint32_t crc32c_table_little[8][256];
 static void crc32c_init_sw_little(void) {
+    if (crc32c_little_initialized)
+        return;
+
+    crc32c_little_initialized = 1;
     for (unsigned n = 0; n < 256; n++) {
         uint32_t crc = n;
         crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
@@ -293,7 +304,8 @@ static void crc32c_init_sw_little(void) {
    constructing the required table if that hasn't already been done. */
 uint32_t crc32c_sw_little(uint32_t crc, void const *buf, size_t len) {
     unsigned char const *next = buf;
-
+    
+    crc32c_init_sw_little();
     crc = ~crc;
     while (len && ((uintptr_t)next & 7) != 0) {
         crc = crc32c_table_little[0][(crc ^ *next++) & 0xff] ^ (crc >> 8);
@@ -336,9 +348,14 @@ static inline uint64_t swap(uint64_t x) {
 #endif
 
 /* Construct tables for software CRC-32C big-endian calculation. */
+static int crc32c_big_initialized = 0;
 static uint32_t crc32c_table_big_byte[256];
 static uint64_t crc32c_table_big[8][256];
 static void crc32c_init_sw_big(void) {
+    if (crc32c_big_initialized)
+        return;
+    
+    crc32c_big_initialized = 1;
     for (unsigned n = 0; n < 256; n++) {
         uint32_t crc = n;
         crc = crc & 1 ? (crc >> 1) ^ POLY : crc >> 1;
@@ -366,6 +383,7 @@ static void crc32c_init_sw_big(void) {
 uint32_t crc32c_sw_big(uint32_t crc, void const *buf, size_t len) {
     unsigned char const *next = buf;
 
+    crc32c_init_sw_big();
     crc = ~crc;
     while (len && ((uintptr_t)next & 7) != 0) {
         crc = crc32c_table_big_byte[(crc ^ *next++) & 0xff] ^ (crc >> 8);
