@@ -44,10 +44,14 @@
 
 #include "crc32c.h"
 
+#ifdef _MSC_VER
+#include <intrin.h>
+#endif
+
 /* CRC-32C (iSCSI) polynomial in reversed bit order. */
 #define POLY 0x82f63b78
 
-#ifdef __x86_64__
+#if defined(__x86_64__) || defined(_M_X64)
 
 /* Hardware CRC-32C for Intel and compatible processors. */
 
@@ -163,9 +167,13 @@ static uint32_t crc32c_hw(uint32_t crc, void const *buf, size_t len) {
        to an eight-byte boundary */
     unsigned char const *next = buf;
     while (len && ((uintptr_t)next & 7) != 0) {
+#ifdef __GNUC__
         __asm__("crc32b\t%1, %0"
                 : "+r"(crc0)
                 : "m"(*next));
+#else
+        crc0 = _mm_crc32_u8(crc0, *next);
+#endif
         next++;
         len--;
     }
@@ -179,11 +187,17 @@ static uint32_t crc32c_hw(uint32_t crc, void const *buf, size_t len) {
         uint64_t crc2 = 0;
         unsigned char const * const end = next + LONG;
         do {
+#ifdef __GNUC__
             __asm__("crc32q\t%3, %0\n\t"
                     "crc32q\t%4, %1\n\t"
                     "crc32q\t%5, %2"
                     : "+r"(crc0), "+r"(crc1), "+r"(crc2)
                     : "m"(*next), "m"(next[LONG]), "m"(next[2*LONG]));
+#else
+            crc0 = _mm_crc32_u64(crc0, *(unsigned long long*)next);
+            crc1 = _mm_crc32_u64(crc1, *(unsigned long long*)(next + LONG));
+            crc2 = _mm_crc32_u64(crc2, *(unsigned long long*)(next + LONG * 2));
+#endif
             next += 8;
         } while (next < end);
         crc0 = crc32c_shift(crc32c_long, crc0) ^ crc1;
@@ -199,11 +213,17 @@ static uint32_t crc32c_hw(uint32_t crc, void const *buf, size_t len) {
         uint64_t crc2 = 0;
         unsigned char const * const end = next + SHORT;
         do {
+#ifdef __GNUC__
             __asm__("crc32q\t%3, %0\n\t"
                     "crc32q\t%4, %1\n\t"
                     "crc32q\t%5, %2"
                     : "+r"(crc0), "+r"(crc1), "+r"(crc2)
                     : "m"(*next), "m"(next[SHORT]), "m"(next[2*SHORT]));
+#else
+            crc0 = _mm_crc32_u64(crc0, *(unsigned long long*)next);
+            crc1 = _mm_crc32_u64(crc1, *(unsigned long long*)(next + SHORT));
+            crc2 = _mm_crc32_u64(crc2, *(unsigned long long*)(next + SHORT * 2));
+#endif
             next += 8;
         } while (next < end);
         crc0 = crc32c_shift(crc32c_short, crc0) ^ crc1;
@@ -217,19 +237,27 @@ static uint32_t crc32c_hw(uint32_t crc, void const *buf, size_t len) {
     {
         unsigned char const * const end = next + (len - (len & 7));
         while (next < end) {
+#ifdef __GNUC__
             __asm__("crc32q\t%1, %0"
                     : "+r"(crc0)
                     : "m"(*next));
+#else
+            crc0 = _mm_crc32_u64(crc0, *(unsigned long long*)next);
             next += 8;
+#endif
         }
         len &= 7;
     }
 
     /* compute the crc for up to seven trailing bytes */
     while (len) {
+#ifdef __GNUC__
         __asm__("crc32b\t%1, %0"
                 : "+r"(crc0)
                 : "m"(*next));
+#else
+        crc0 = _mm_crc32_u8(crc0, *next);
+#endif
         next++;
         len--;
     }
@@ -243,6 +271,7 @@ static uint32_t crc32c_hw(uint32_t crc, void const *buf, size_t len) {
    cpuid instruction itself, which was introduced on the 486SL in 1992, so this
    will fail on earlier x86 processors.  cpuid works on all Pentium and later
    processors. */
+#ifdef __GNUC__
 #define SSE42(have) \
     do { \
         uint32_t eax, ecx; \
@@ -253,6 +282,15 @@ static uint32_t crc32c_hw(uint32_t crc, void const *buf, size_t len) {
                 : "%ebx", "%edx"); \
         (have) = (ecx >> 20) & 1; \
     } while (0)
+#else
+#define SSE42(have) \
+    do { \
+        int values[4]; \
+        __cpuid(values, 1); \
+        (have) = (values[2] >> 20) & 1; \
+    } while (0)
+#endif
+
 
 /* Compute a CRC-32C.  If the crc32 instruction is available, use the hardware
    version.  Otherwise, use the software version. */
