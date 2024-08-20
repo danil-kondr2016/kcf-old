@@ -1,3 +1,4 @@
+#include "stdio64.h"
 #include "archive.h"
 
 #include <stdlib.h>
@@ -34,7 +35,7 @@ KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
 	if (!Result)
 		return KCF_ERROR_OUT_OF_MEMORY;
 
-	Result->File = fopen(Path, ModeString);
+	Result->File = kcf_fopen(Path, ModeString);
 	if (!Result->File) {
 		return ErrnoToKcf();
 	}

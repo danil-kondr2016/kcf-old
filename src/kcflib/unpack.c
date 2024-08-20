@@ -1,3 +1,4 @@
+#include "stdio64.h"
 #include "unpack.h"
 #include "kcf_impl.h"
 
@@ -23,7 +24,7 @@ KCFERROR UnpackCurrentFile(HKCF hKCF)
 	if (Error)
 		goto cleanup1;
 	
-	OutputFile = fopen(hKCF->CurrentFile.FileName, "wb");
+	OutputFile = kcf_fopen(hKCF->CurrentFile.FileName, "wb");
 	if (!OutputFile) {
 		Error = ErrnoToKcf();
 		goto cleanup2;

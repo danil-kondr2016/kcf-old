@@ -46,7 +46,7 @@ KCFERROR PackFile(HKCF hKCF, char *FileName, int PackingMode)
 	/* TODO use PackingMode for specifying packing parameters */
 	(void)PackingMode;
 
-	File = fopen(FileName, "rb");
+	File = kcf_fopen(FileName, "rb");
 	if (!File) {
 		return KCF_ERROR_FILE_NOT_FOUND;
 	}
