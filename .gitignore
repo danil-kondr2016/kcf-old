@@ -10,3 +10,6 @@
 [Oo]bj/
 *.pdb
 *.user
+*~
+.*.un~
+.*.swp
