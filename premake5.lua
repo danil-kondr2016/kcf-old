@@ -1,32 +1,17 @@
 workspace "TheKCFProject"
 	configurations { "Debug", "Release" }
 
+	filter "system:windows"
+		defines { "KCF_WINDOWS" }
+
 project "kcflib"
 	kind "StaticLib"
 	language "C"
+	includedirs { "include/kcflib" }
 	files {
-		"archive.h",
-		"bytepack.h",
-		"crc32c.h",
-		"errors.h",
-		"kcf_impl.h",
-		"pack.h",
-		"record.h",
-		"unpack.h",
-		"utils.h",
-		"archive.c",
-		"archhdr.c",
-		"bytepack.c",
-		"crc32c.c",
-		"errors.c",
-		"filehdr.c",
-		"marker.c",
-		"pack.c",
-		"read.c",
-		"record.c",
-		"skip.c",
-		"unpack.c",
-		"write.c",
+		"include/kcflib/*.h",
+		"src/kcflib/*.h",
+		"src/kcflib/*.c"
 	}
 
 	filter { "configurations:Debug" }
@@ -40,7 +25,8 @@ project "kcflib"
 project "kcf"
 	kind "ConsoleApp"
 	language "C"
-	files { "main.c" }
+	files { "src/kcf/main.c" }
+	includedirs { "include/kcflib" }
 	links { "kcflib" }
 
 	filter { "configurations:Debug" }
