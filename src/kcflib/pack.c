@@ -1,5 +1,6 @@
-#include "errors.h"
 #define _CRT_SECURE_NO_WARNINGS
+#include "stdio64.h"
+#include "errors.h"
 #include "archive.h"
 #include "kcf_impl.h"
 #include "record.h"
@@ -10,35 +11,23 @@
 #define _strdup strdup
 #endif
 
-#ifdef __linux__
-static inline int64_t _ftelli64(FILE *f)
-{
-	return ftello(f);
-}
-
-static inline int64_t _fseeki64(FILE *f, long long off, int whence)
-{
-	return fseeko(f, off, whence);
-}
-#endif
-
 static inline
 int64_t get_file_size(FILE *f)
 {
 	int64_t old_pos, size;
 
-	old_pos = _ftelli64(f);
+	old_pos = kcf_ftell(f);
 	if (old_pos == -1)
 		return -1;
 
-	if (_fseeki64(f, 0, SEEK_END) == -1)
+	if (kcf_fseek(f, 0, SEEK_END) == -1)
 		return -1;
 
-	size = _ftelli64(f);
+	size = kcf_ftell(f);
 	if (size == -1)
 		return -1;
 
-	if (_fseeki64(f, old_pos, SEEK_SET) == -1)
+	if (kcf_fseek(f, old_pos, SEEK_SET) == -1)
 		return -1;
 
 	return size;
@@ -149,4 +138,5 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
 #endif

@@ -11,6 +11,8 @@
 #include <inttypes.h>
 #include <stdarg.h>
 
+#include "fstream.h"
+
 enum KcfWriterState
 {
 	KCF_STATE_WRITING_IDLE,

@@ -1,3 +1,4 @@
+#include "stdio64.h"
 #include "utils.h"
 
 int kcf_fskip(FILE *File, size_t SizeToSkip)
@@ -5,11 +6,11 @@ int kcf_fskip(FILE *File, size_t SizeToSkip)
 	int Seekable = 1;
 	size_t to_read;
 
-	if (fseek(File, 0L, SEEK_CUR) == -1)
+	if (kcf_fseek(File, 0L, SEEK_CUR) == -1)
 		Seekable = 0;
 
 	if (Seekable) {
-		if (fseek(File, SizeToSkip, SEEK_CUR) == -1)
+		if (kcf_fseek(File, SizeToSkip, SEEK_CUR) == -1)
 			return -1;
 	}
 	else {

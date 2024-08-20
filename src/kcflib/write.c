@@ -1,3 +1,4 @@
+#include "stdio64.h"
 #include "crc32c.h"
 #include "errors.h"
 #include "archive.h"
@@ -5,18 +6,6 @@
 #include <stdlib.h>
 
 #include "kcf_impl.h"
-
-#ifdef __linux__
-static inline int64_t _ftelli64(FILE *f)
-{
-	return ftello(f);
-}
-
-static inline int64_t _fseeki64(FILE *f, long long off, int whence)
-{
-	return fseeko(f, off, whence);
-}
-#endif
 
 KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record)
 {
@@ -42,7 +31,7 @@ KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record)
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
-	hKCF->RecordOffset = _ftelli64(hKCF->File);
+	hKCF->RecordOffset = kcf_ftell(hKCF->File);
 	RecordToBuffer(Record, buffer, Record->Header.HeadSize);
 	if (!fwrite(buffer, Record->Header.HeadSize, 1, hKCF->File))
 		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));
@@ -166,8 +155,8 @@ KCFERROR FinishAddedData(HKCF hKCF)
 		goto cleanup; 
 	}
 
-	hKCF->RecordEndOffset = _ftelli64(hKCF->File);
-	if (_fseeki64(hKCF->File, hKCF->RecordOffset, SEEK_SET) == -1)
+	hKCF->RecordEndOffset = kcf_ftell(hKCF->File);
+	if (kcf_fseek(hKCF->File, hKCF->RecordOffset, SEEK_SET) == -1)
 		return trace_kcf_error(KCF_ERROR_WRITE);
 
 	hKCF->LastRecord.Header.AddedSize = hKCF->WrittenAddedData;
@@ -180,7 +169,7 @@ KCFERROR FinishAddedData(HKCF hKCF)
 
 	if (!fwrite(buffer, hKCF->LastRecord.Header.HeadSize, 1, hKCF->File))
 		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));
-	_fseeki64(hKCF->File, hKCF->RecordEndOffset, SEEK_SET);
+	kcf_fseek(hKCF->File, hKCF->RecordEndOffset, SEEK_SET);
 
 cleanup:
 	ClearRecord(&hKCF->LastRecord);
