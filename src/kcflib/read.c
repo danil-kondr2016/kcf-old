@@ -60,7 +60,7 @@ KCFERROR read_record_header(
 		ReadU64LE(buffer, 14, &hdr_size, &RecordHdr->AddedSize);
 	}
 	else if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8)
-		       == KCF_HAS_ADDED_SIZE_4) {
+			   == KCF_HAS_ADDED_SIZE_4) {
 		ReadU32LE(buffer, 14, &hdr_size, &RecordHdr->AddedSizeLow);
 	}
 
