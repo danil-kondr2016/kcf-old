@@ -165,3 +165,34 @@ void ClearFileInfo(struct KcfFileInfo *Info)
 
 	memset(Info, 0, sizeof(*Info));
 }
+
+bool CopyFileInfo(
+	struct KcfFileInfo *Dest, 
+	struct KcfFileInfo *Src
+)
+{
+	if (!Dest||!Src)
+		return false;
+
+	Dest->TimeStamp = Src->TimeStamp;
+	Dest->UnpackedSize = Src->UnpackedSize;
+
+	if (Src->FileName) {
+		int file_name_size = strlen(Src->FileName);
+		Dest->FileName = malloc(file_name_size + 1);
+		if (!Dest->FileName)
+			return false;
+		memcpy(Dest->FileName, Src->FileName, file_name_size);
+		Dest->FileName[file_name_size] = 0;
+	}
+
+	Dest->FileCRC32 = Src->FileCRC32;
+	Dest->CompressionInfo = Src->CompressionInfo;
+	Dest->FileType = Src->FileType;
+	Dest->HasTimeStamp = Src->HasTimeStamp;
+	Dest->HasFileCRC32 = Src->HasFileCRC32;
+	Dest->HasUnpackedSize = Src->HasUnpackedSize;
+	Dest->HasUnpackedSize8 = Src->HasUnpackedSize8;
+
+	return true;
+}
