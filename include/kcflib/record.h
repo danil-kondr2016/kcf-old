@@ -50,26 +50,6 @@ struct KcfRecordHeader
 	uint32_t AddedDataCRC32;
 };
 
-#define KCF_FILE_HAS_TIMESTAMP  0x01
-#define KCF_FILE_HAS_FILE_CRC32 0x02
-#define KCF_FILE_HAS_UNPACKED_4 0x04
-#define KCF_FILE_HAS_UNPACKED_8 0x0C
-
-#define KCF_DIRECTORY    'd'
-#define KCF_REGULAR_FILE 'F'
-
-struct KcfFileHeader
-{
-	char     *FileName;
-	uint64_t TimeStamp;
-	uint64_t UnpackedSize;
-	uint32_t FileCRC32;
-	uint32_t CompressionInfo;
-	uint16_t FileNameSize;
-	uint8_t  FileFlags;
-	uint8_t  FileType;
-};
-
 struct KcfRecord
 {
 	struct KcfRecordHeader Header;
@@ -95,10 +75,6 @@ bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size);
 KCFERROR RecordToArchiveHeader(struct KcfRecord *, struct KcfArchiveHeader *);
 KCFERROR ArchiveHeaderToRecord(struct KcfArchiveHeader *, struct KcfRecord *);
 void ClearArchiveHeader(struct KcfArchiveHeader *);
-
-KCFERROR RecordToFileHeader(struct KcfRecord *, struct KcfFileHeader *);
-KCFERROR FileHeaderToRecord(struct KcfFileHeader *, struct KcfRecord *);
-void ClearFileHeader(struct KcfFileHeader *);
 
 /* Flag probing functions */
 

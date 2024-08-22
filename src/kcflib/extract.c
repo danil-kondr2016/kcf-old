@@ -5,12 +5,12 @@
 #include <string.h>
 #include <assert.h>
 
-static KCFERROR read_file_info(HKCF hKCF, struct KcfFileHeader *FileInfo);
+static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo *FileInfo);
 
 static 
 KCFERROR copy_file_header(
-	struct KcfFileHeader *dest, 
-	struct KcfFileHeader *src
+	struct KcfFileInfo *dest, 
+	struct KcfFileInfo *src
 )
 {
 	assert(dest);
@@ -36,7 +36,7 @@ KCFERROR copy_file_header(
 	return KCF_ERROR_OK;
 }
 
-KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileHeader *FileInfo)
+KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileInfo *FileInfo)
 {
 	if (!hKCF)
 		return KCF_ERROR_INVALID_PARAMETER;
@@ -57,7 +57,7 @@ KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileHeader *FileInfo)
 KCFERROR SkipFile(HKCF hKCF)
 {
 	struct KcfRecord Record = {0};
-	struct KcfFileHeader FileHdr = {0};
+	struct KcfFileInfo FileInfo = {0};
 	KCFERROR Error = KCF_ERROR_OK;
 
 	if (!hKCF)
@@ -92,7 +92,7 @@ KCFERROR SkipFile(HKCF hKCF)
 
 	hKCF->UnpackerState = KCF_UPSTATE_FILE_HEADER;
 cleanup:
-	ClearFileHeader(&FileHdr);
+	ClearFileInfo(&FileInfo);
 	ClearRecord(&Record);
 	return Error;
 }
@@ -118,7 +118,7 @@ KCFERROR ExtractFileData(HKCF hKCF, BIO *Output)
 		goto cleanup1;
 	}
 
-	Error = RecordToFileHeader(&hKCF->LastRecord, &hKCF->CurrentFile);
+	Error = RecordToFileInfo(&hKCF->LastRecord, &hKCF->CurrentFile);
 	if (Error)
 		goto cleanup1;
 
@@ -155,14 +155,14 @@ KCFERROR ExtractFileData(HKCF hKCF, BIO *Output)
 	while (hKCF->LastRecord.Header.HeadFlags & 0x01);
 
 cleanup2:
-	ClearFileHeader(&hKCF->CurrentFile);
+	ClearFileInfo(&hKCF->CurrentFile);
 cleanup1:
 	ClearRecord(&hKCF->LastRecord);
 cleanup0:
 	return Error;
 }
 
-static KCFERROR read_file_info(HKCF hKCF, struct KcfFileHeader* FileInfo)
+static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo* FileInfo)
 {
 	struct KcfRecord Record = {0};
 	KCFERROR Error = KCF_ERROR_OK;
@@ -171,7 +171,7 @@ static KCFERROR read_file_info(HKCF hKCF, struct KcfFileHeader* FileInfo)
 	if (Error)
 		return Error;
 
-	Error = RecordToFileHeader(&Record, FileInfo);
+	Error = RecordToFileInfo(&Record, FileInfo);
 	if (Error)
 		goto cleanup;
 
