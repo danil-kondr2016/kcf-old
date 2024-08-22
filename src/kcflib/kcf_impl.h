@@ -11,8 +11,6 @@
 #include <inttypes.h>
 #include <stdarg.h>
 
-#include "fstream.h"
-
 enum KcfWriterState
 {
 	KCF_STATE_WRITING_IDLE,
@@ -28,6 +26,14 @@ enum KcfReaderState
 	KCF_STATE_AT_THE_BEGINNING_OF_RECORD,
 	KCF_STATE_AT_MAIN_FIELD_OF_RECORD,
 	KCF_STATE_AT_ADDED_FIELD_OF_RECORD,
+};
+
+enum KcfUnpackerState
+{
+	KCF_UPSTATE_VALIDATING_FORMAT,
+	KCF_UPSTATE_FILE_HEADER,
+	KCF_UPSTATE_FILE_DATA,
+	KCF_UPSTATE_AFTER_FILE_DATA,
 };
 
 struct Kcf
@@ -53,10 +59,15 @@ struct Kcf
 		bool HasAddedSize : 1;
 		bool IsWriting : 1;
 		bool IsWritable : 1;
+		bool IsUnpacking : 1;
 	};
 	union {
 		enum KcfWriterState WriterState;
 		enum KcfReaderState ReaderState;
+	};
+
+	union {
+		enum KcfUnpackerState UnpackerState;
 	};
 
 	struct KcfFileHeader CurrentFile;
@@ -113,24 +124,41 @@ KCFERROR trace_kcf_error(KCFERROR Error)
 	fprintf(stderr, "##KCFDEBUG## Error #%d (%s)\n", Error, GetKcfErrorString(Error));
 	return Error;
 }
+
+static inline void trace_kcf_record(struct KcfRecord *Record) {
+  trace_kcf_msg("REC %04X %02X %02X %5u %20llu %08X", Record->Header.HeadCRC,
+                Record->Header.HeadType, Record->Header.HeadFlags,
+                Record->Header.HeadSize, Record->Header.AddedSize,
+                Record->Header.AddedDataCRC32);
+  trace_kcf_dump_buffer(Record->Data, Record->DataSize);
+}
 #else
-#define trace_kcf_state(x)
-#define trace_kcf_msg(...)
-#define trace_kcf_dump_buffer(a, b)
-#define trace_kcf_error(e) (e)
-#endif
+static inline
+void trace_kcf_state(HKCF hKCF)
+{
+}
 
 static inline
-void trace_kcf_record(struct KcfRecord *Record)
+void trace_kcf_msg(const char *format, ...)
 {
-	trace_kcf_msg("REC %04X %02X %02X %5u %20llu %08X", 
-		Record->Header.HeadCRC,
-		Record->Header.HeadType,
-		Record->Header.HeadFlags,
-		Record->Header.HeadSize,
-		Record->Header.AddedSize,
-		Record->Header.AddedDataCRC32);
-	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
 }
+
+static inline
+void trace_kcf_dump_buffer(uint8_t *buf, size_t size)
+{
+}
+
+static inline
+KCFERROR trace_kcf_error(KCFERROR Error)
+{
+}
+
+static inline 
+void trace_kcf_record(struct KcfRecord *Record) 
+{
+}
+#endif
+
+
 
 #endif
