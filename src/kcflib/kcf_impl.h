@@ -37,6 +37,14 @@ enum KcfUnpackerState
 	KCF_UPSTATE_AFTER_FILE_DATA,
 };
 
+enum KcfPackerState
+{
+	KCF_PKSTATE_IDLE,
+	KCF_PKSTATE_FILE_HEADER,
+	KCF_PKSTATE_FILE_DATA,
+	KCF_PKSTATE_AFTER_FILE_DATA,
+};
+
 struct Kcf
 {
 	union {
