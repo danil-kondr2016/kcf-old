@@ -1,9 +1,8 @@
 #pragma once
-#ifndef _ERRORS_H_
-#define _ERRORS_H_
+#ifndef _KCFERR_H_
+#define _KCFERR_H_
 
 #include <stdio.h>
-#include <stdbool.h>
 
 enum KcfError
 {

@@ -1,4 +1,4 @@
-#include "errors.h"
+#include "kcferr.h"
 #include "record.h"
 #include "bytepack.h"
 

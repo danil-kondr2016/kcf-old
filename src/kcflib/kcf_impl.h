@@ -3,7 +3,7 @@
 #define _KCF_IMPL_H_
 
 #include "archive.h"
-#include "errors.h"
+#include "kcferr.h"
 #include "record.h"
 #include "files.h"
 

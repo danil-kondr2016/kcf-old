@@ -1,4 +1,4 @@
-#include "errors.h"
+#include "kcferr.h"
 #include "archive.h"
 
 #include "kcf_impl.h"

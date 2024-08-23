@@ -1,5 +1,5 @@
 #include "archive.h"
-#include "errors.h"
+#include "kcferr.h"
 #include "bytepack.h"
 #include "utils.h"
 #include "crc32c.h"

@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 #include "record.h"
-#include "errors.h"
+#include "kcferr.h"
 
 typedef struct Kcf *HKCF, **PHKCF;
 
