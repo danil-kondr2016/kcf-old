@@ -1146,7 +1146,7 @@ static __inline const char* _filenameU(const char* path)
 	return path;
 }
 
-static __inline uint64_t _filesizeU(const char* path)
+static __inline unsigned long long _filesizeU(const char* path)
 {
 	struct __stat64 stat64 = { 0 };
 	_stat64U(path, &stat64);
