@@ -42,10 +42,10 @@ KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
 
 	if (Mode == KCF_MODE_CREATE) {
 		Result->IsWriting = true;
-		Result->WriterState = KCF_STATE_WRITING_MARKER;
+		Result->WriterState = KCF_WRSTATE_MARKER;
 	}
 	else {
-		Result->ReaderState = KCF_STATE_SEEKING_MARKER;
+		Result->ReaderState = KCF_RDSTATE_MARKER;
 	}
 
 	if (Mode == KCF_MODE_MODIFY || Mode == KCF_MODE_CREATE)
@@ -65,12 +65,12 @@ void CloseArchive(HKCF hKCF)
 
 bool StartReadingFromArchive(HKCF hKCF)
 {
-	if (hKCF->WriterState == KCF_STATE_WRITING_ADDED_DATA)
+	if (hKCF->WriterState == KCF_WRSTATE_ADDED_DATA)
 		FinishAddedData(hKCF);
 	fflush(hKCF->File);
 
 	hKCF->IsWriting = false;
-	hKCF->ReaderState = KCF_STATE_READING_IDLE;
+	hKCF->ReaderState = KCF_RDSTATE_IDLE;
 	return true;
 }
 
@@ -80,6 +80,6 @@ bool StartWritingToArchive(HKCF hKCF)
 		return false;
 
 	hKCF->IsWriting = true;
-	hKCF->WriterState = KCF_STATE_WRITING_IDLE;
+	hKCF->WriterState = KCF_WRSTATE_IDLE;
 	return true;
 }

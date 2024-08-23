@@ -15,7 +15,7 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 	uint8_t buf[6] = {0};
 	size_t n_read = 0;
 
-	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_SEEKING_MARKER)
+	if (hKCF->IsWriting || hKCF->ReaderState != KCF_RDSTATE_MARKER)
 		return KCF_ERROR_INVALID_STATE;
 
 	do {
@@ -42,13 +42,13 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 
 	return KCF_ERROR_INVALID_FORMAT;
 ok:
-	hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
+	hKCF->ReaderState = KCF_RDSTATE_RECORD_HEADER;
 	return KCF_ERROR_OK;
 }
 
 KCFERROR WriteArchiveMarker(HKCF hKCF)
 {
-	if (!hKCF->IsWriting || hKCF->WriterState != KCF_STATE_WRITING_MARKER)
+	if (!hKCF->IsWriting || hKCF->WriterState != KCF_WRSTATE_MARKER)
 		return KCF_ERROR_INVALID_STATE;
 
 	if (fputc(MARKER_1, hKCF->File) == EOF) return KCF_ERROR_WRITE;
@@ -58,6 +58,6 @@ KCFERROR WriteArchiveMarker(HKCF hKCF)
 	if (fputc(MARKER_5, hKCF->File) == EOF) return KCF_ERROR_WRITE;
 	if (fputc(MARKER_6, hKCF->File) == EOF) return KCF_ERROR_WRITE;
 
-	hKCF->WriterState = KCF_STATE_WRITING_IDLE;
+	hKCF->WriterState = KCF_WRSTATE_IDLE;
 	return KCF_ERROR_OK;
 }
