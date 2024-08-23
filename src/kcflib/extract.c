@@ -7,35 +7,6 @@
 
 static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo *FileInfo);
 
-static 
-KCFERROR copy_file_header(
-	struct KcfFileInfo *dest, 
-	struct KcfFileInfo *src
-)
-{
-	assert(dest);
-	assert(src);
-
-	dest->CompressionInfo = src->CompressionInfo;
-	dest->FileCRC32 = src->FileCRC32;
-	dest->FileFlags = src->FileFlags;
-	dest->FileNameSize = src->FileNameSize;
-	dest->FileType = src->FileType;
-	dest->TimeStamp = src->TimeStamp;
-	dest->UnpackedSize = src->UnpackedSize;
-	if (src->FileName) {
-		dest->FileName = malloc(src->FileNameSize + 1);
-		if (!dest->FileName)
-			return KCF_ERROR_OUT_OF_MEMORY;
-		memcpy(dest->FileName, src->FileName, src->FileNameSize);
-		dest->FileName[src->FileNameSize] = '\0';
-	}
-	else
-		dest->FileName = NULL;
-
-	return KCF_ERROR_OK;
-}
-
 KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileInfo *FileInfo)
 {
 	if (!hKCF)
@@ -48,7 +19,7 @@ KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileInfo *FileInfo)
 		return read_file_info(hKCF, FileInfo);
 	case KCF_UPSTATE_FILE_DATA:
 	case KCF_UPSTATE_AFTER_FILE_DATA:
-		return copy_file_header(FileInfo, &hKCF->CurrentFile);
+		return CopyFileInfo(FileInfo, &hKCF->CurrentFile);
 	default:
 		return KCF_ERROR_INVALID_STATE;
 	}

@@ -76,6 +76,7 @@ struct Kcf
 	};
 
 	union {
+		enum KcfPackerState PackerState;
 		enum KcfUnpackerState UnpackerState;
 	};
 
@@ -165,6 +166,7 @@ void trace_kcf_dump_buffer(uint8_t *buf, size_t size)
 static inline
 KCFERROR trace_kcf_error(KCFERROR Error)
 {
+	return Error;
 }
 
 static inline 

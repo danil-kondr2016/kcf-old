@@ -51,7 +51,7 @@ KCFERROR InsertFileData(HKCF hKCF, BIO *Input)
 		if (!ret)
 			return KCF_ERROR_WRITE;
 
-		Error = WriteAddedData(hKCF, Input, BytesRead, &BytesWritten);
+		Error = WriteAddedData(hKCF, Buffer, BytesRead);
 		if (Error)
 			return Error;		
 	}

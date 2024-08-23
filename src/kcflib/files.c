@@ -1,6 +1,7 @@
 #include "kcferr.h"
 #include "record.h"
 #include "bytepack.h"
+#include "files.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -22,7 +23,7 @@ int get_file_info_data_size(struct KcfFileInfo *Info)
 	result = 2; /* FileFlags, FileType */
 	if (Info->HasUnpackedSize && Info->HasUnpackedSize8)
 		result += 8; /* UnpackedSize */
-	else if (Info->HasUnpackedSize &&& !Info->HasUnpackedSize8)
+	else if (Info->HasUnpackedSize && !Info->HasUnpackedSize8)
 		result += 4; /* UnpackedSize */
 
 	if (Info->HasFileCRC32)
@@ -80,7 +81,7 @@ FileInfoToRecord(
 	Info->HasUnpackedSize8 = 
 		(flags & KCF_FILE_HAS_UNPACKED_8) == KCF_FILE_HAS_UNPACKED_8;
 
-	switch (Info->FileFlags & KCF_FILE_HAS_UNPACKED_8) {
+	switch (flags & KCF_FILE_HAS_UNPACKED_8) {
 	case KCF_FILE_HAS_UNPACKED_8:
 		ReadU64LE(pbuf, Size, &Offset, &Info->UnpackedSize);
 		break;
@@ -90,13 +91,13 @@ FileInfoToRecord(
 		break;
 	}
 
-	if (Info->FileFlags & KCF_FILE_HAS_FILE_CRC32) {
+	if (Info->HasFileCRC32) {
 		ReadU32LE(pbuf, Size, &Offset, &Info->FileCRC32);
 	}
 
 	ReadU32LE(pbuf, Size, &Offset, &Info->CompressionInfo);
 
-	if (Info->FileFlags & KCF_FILE_HAS_TIMESTAMP) {
+	if (Info->HasTimeStamp) {
 		ReadU64LE(pbuf, Size, &Offset, &Info->TimeStamp);
 	}
 
@@ -135,8 +136,8 @@ RecordToFileInfo(
 	file_flags = 0;
 	if (Info->HasTimeStamp) file_flags |= KCF_FILE_HAS_TIMESTAMP;
 	if (Info->HasFileCRC32) file_flags |= KCF_FILE_HAS_FILE_CRC32;
-	if (Info->HasUnpackedSize) file_flags |= KCF_FILE_HAS_FILE_UNPACKED_4;
-	if (Info->HasUnpackedSize8) file_flags |= KCF_FILE_HAS_FILE_UNPACKED_8;
+	if (Info->HasUnpackedSize) file_flags |= KCF_FILE_HAS_UNPACKED_4;
+	if (Info->HasUnpackedSize8) file_flags |= KCF_FILE_HAS_UNPACKED_8;
 
 	WriteU8(Record->Data, size, &offset, file_flags);
 	WriteU8(Record->Data, size, &offset, Info->FileType);
