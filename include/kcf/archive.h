@@ -4,8 +4,8 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
+/* TODO replace with custom IO system which aware of 64-bit pointers. */
 #include <openssl/bio.h>
 
 #include "errors.h"
@@ -16,7 +16,7 @@ typedef struct kcf_st KCF;
 #define KCF_MODE_CREATE 0x02
 #define KCF_MODE_MODIFY 0x03
 
-KCFERROR KCF_create(char *Path, int Mode, KCF **pkcf);
+KCFERROR KCF_create(BIO *stream, KCF **pkcf);
 void KCF_close(KCF *kcf);
 
 /* Write/read mode functions */

@@ -6,7 +6,6 @@
 
 #include "crc32c.h"
 #include "kcf_impl.h"
-#include "stdio64.h"
 
 KCFERROR KCF_write_record(KCF *kcf, struct KcfRecord *Record)
 {
@@ -32,11 +31,10 @@ KCFERROR KCF_write_record(KCF *kcf, struct KcfRecord *Record)
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
-	kcf->RecordOffset = kcf_ftell(kcf->File);
+	kcf->RecordOffset = BIO_tell(kcf->Stream);
 	rec_to_buffer(Record, buffer, Record->HeadSize);
-	if (!fwrite(buffer, Record->HeadSize, 1, kcf->File))
-		return trace_kcf_error(
-		    kcf_file_error(kcf->File, KCF_SITUATION_WRITING));
+	if (!BIO_write_ex(kcf->Stream, buffer, Record->HeadSize, NULL))
+		return KCF_ERROR_WRITE;
 
 	/* Save all information for backpatching */
 	kcf->HasAddedSize = !!(Record->HeadFlags & KCF_HAS_ADDED_SIZE_4);
@@ -98,12 +96,10 @@ KCFERROR KCF_write_record_with_added_data(KCF *kcf, struct KcfRecord *Record,
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
 	rec_to_buffer(Record, buffer, Record->HeadSize);
-	if (!fwrite(buffer, Record->HeadSize, 1, kcf->File))
-		return trace_kcf_error(
-		    kcf_file_error(kcf->File, KCF_SITUATION_WRITING));
-	if (!fwrite(AddedData, Size, 1, kcf->File))
-		return trace_kcf_error(
-		    kcf_file_error(kcf->File, KCF_SITUATION_WRITING));
+	if (!BIO_write_ex(kcf->Stream, buffer, Record->HeadSize, NULL))
+		return KCF_ERROR_WRITE;
+	if (!BIO_write_ex(kcf->Stream, AddedData, Size, NULL))
+		return KCF_ERROR_WRITE;
 
 	trace_kcf_state(kcf);
 	trace_kcf_msg("WriteRecord end");
@@ -130,9 +126,8 @@ KCFERROR KCF_write_added_data(KCF *kcf, uint8_t *AddedData, size_t Size)
 			return KCF_ERROR_OK;
 	}
 
-	if (!fwrite(AddedData, Size, 1, kcf->File))
-		return trace_kcf_error(
-		    kcf_file_error(kcf->File, KCF_SITUATION_WRITING));
+	if (!BIO_write_ex(kcf->Stream, AddedData, Size, NULL))
+		return KCF_ERROR_WRITE;
 
 	kcf->WrittenAddedData += Size;
 	if (kcf->HasAddedDataCRC32)
@@ -161,8 +156,8 @@ KCFERROR KCF_finish_added_data(KCF *kcf)
 		goto cleanup;
 	}
 
-	kcf->RecordEndOffset = kcf_ftell(kcf->File);
-	if (kcf_fseek(kcf->File, kcf->RecordOffset, SEEK_SET) == -1)
+	kcf->RecordEndOffset = BIO_tell(kcf->Stream);
+	if (BIO_seek(kcf->Stream, kcf->RecordOffset) < 0)
 		return trace_kcf_error(KCF_ERROR_WRITE);
 
 	kcf->LastRecord.AddedSize      = kcf->WrittenAddedData;
@@ -173,10 +168,9 @@ KCFERROR KCF_finish_added_data(KCF *kcf)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 	rec_to_buffer(&kcf->LastRecord, buffer, kcf->LastRecord.HeadSize);
 
-	if (!fwrite(buffer, kcf->LastRecord.HeadSize, 1, kcf->File))
-		return trace_kcf_error(
-		    kcf_file_error(kcf->File, KCF_SITUATION_WRITING));
-	kcf_fseek(kcf->File, kcf->RecordEndOffset, SEEK_SET);
+	if (!BIO_write_ex(kcf->Stream, buffer, kcf->LastRecord.HeadSize, NULL))
+		return KCF_ERROR_WRITE;
+	BIO_seek(kcf->Stream, kcf->RecordEndOffset);
 
 cleanup:
 	rec_clear(&kcf->LastRecord);

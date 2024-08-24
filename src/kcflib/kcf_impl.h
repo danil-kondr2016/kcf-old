@@ -57,7 +57,7 @@ struct kcf_st {
 	uint64_t RecordOffset;
 	uint64_t RecordEndOffset;
 
-	FILE *File;
+	BIO *Stream;
 	struct KcfRecord LastRecord;
 	struct {
 		bool HasAddedDataCRC32 : 1;

@@ -9,14 +9,19 @@
 #include "kcf_impl.h"
 #include "read.h"
 #include "record.h"
-#include "utils.h"
 
+/*
+ * During the transition from stdio to OpenSSL's BIO, I have fixed
+ * another potential bug when reading 8-bit added size field (instead
+ * of 4-bit one field)
+ */
 static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
                                    size_t *HeaderSize)
 {
 	uint8_t buffer[18] = {0};
 	ptrdiff_t hdr_size = 0;
 	size_t n_read;
+	int ret;
 
 	assert(kcf);
 	assert(Record);
@@ -24,14 +29,10 @@ static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
 	trace_kcf_msg("read_record_header begin");
 	trace_kcf_state(kcf);
 
-	n_read = fread(buffer, 1, 6, kcf->File);
-	if (n_read == 0)
-		return trace_kcf_error(kcf_file_error(
-		    kcf->File, KCF_SITUATION_READING_IN_BEGINNING));
-	if (n_read < 6)
-		return trace_kcf_error(
-		    kcf_file_error(kcf->File, KCF_SITUATION_READING_IN_MIDDLE));
-
+	if (!BIO_read_ex(kcf->Stream, buffer, 6, &n_read)) {
+		return trace_kcf_error(KCF_ERROR_READ);
+	}
+	
 	ReadU16LE(buffer, 6, &hdr_size, &Record->HeadCRC);
 	ReadU8(buffer, 6, &hdr_size, &Record->HeadType);
 	ReadU8(buffer, 6, &hdr_size, &Record->HeadFlags);
@@ -43,18 +44,14 @@ static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
 	Record->AddedSize = 0;
 
 	if ((Record->HeadFlags & KCF_HAS_ADDED_SIZE_4) != 0) {
-		n_read = fread(buffer + hdr_size, 1, 4, kcf->File);
-		if (n_read < 4)
-			return kcf_file_error(kcf->File,
-			                      KCF_SITUATION_READING_IN_MIDDLE);
+		if (!BIO_read_ex(kcf->Stream, buffer + hdr_size, 4, &n_read))
+			return trace_kcf_error(KCF_ERROR_READ);
 	}
 
 	if ((Record->HeadFlags & KCF_HAS_ADDED_SIZE_8) ==
 	    KCF_HAS_ADDED_SIZE_8) {
-		n_read = fread(buffer + hdr_size, 1, 4, kcf->File);
-		if (n_read < 4)
-			return kcf_file_error(kcf->File,
-			                      KCF_SITUATION_READING_IN_MIDDLE);
+		if (!BIO_read_ex(kcf->Stream, buffer + hdr_size + 4, 4, &n_read))
+			return trace_kcf_error(KCF_ERROR_READ);
 		ReadU64LE(buffer, 14, &hdr_size, &Record->AddedSize);
 	} else if ((Record->HeadFlags & KCF_HAS_ADDED_SIZE_8) ==
 	           KCF_HAS_ADDED_SIZE_4) {
@@ -62,10 +59,8 @@ static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
 	}
 
 	if ((Record->HeadFlags & KCF_HAS_ADDED_DATA_CRC32)) {
-		n_read = fread(buffer + hdr_size, 1, 4, kcf->File);
-		if (n_read < 4)
-			return kcf_file_error(kcf->File,
-			                      KCF_SITUATION_READING_IN_MIDDLE);
+		if (!BIO_read_ex(kcf->Stream, buffer + hdr_size, 4, &n_read))
+			return trace_kcf_error(KCF_ERROR_READ);
 		ReadU32LE(buffer, 18, &hdr_size, &Record->AddedDataCRC32);
 		kcf->AddedDataCRC32 = Record->AddedDataCRC32;
 	} else {
@@ -114,13 +109,12 @@ KCFERROR KCF_read_record(KCF *kcf, struct KcfRecord *Record)
 	if (!Record->Data)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
-	if (!fread(Record->Data, Record->DataSize, 1, kcf->File))
-		return trace_kcf_error(
-		    kcf_file_error(kcf->File, KCF_SITUATION_READING_IN_MIDDLE));
+	if (!BIO_read_ex(kcf->Stream, Record->Data, Record->DataSize, NULL))
+		return trace_kcf_error(KCF_ERROR_READ);
 
 	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
 
-	if (rec_has_added_size_4(Record) || rec_has_added_size_8(Record))
+	if (rec_has_added_size(Record))
 		kcf->ReaderState = KCF_RDSTATE_ADDED_DATA;
 	else
 		kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
@@ -131,6 +125,33 @@ KCFERROR KCF_read_record(KCF *kcf, struct KcfRecord *Record)
 	trace_kcf_msg("ReadRecord end");
 
 	return KCF_ERROR_OK;
+}
+
+static 
+int
+BIO_skip(BIO *x, size_t size)
+{
+	int ret = 0;
+	size_t n_read, to_read, remaining;
+	uint8_t buffer[4096];
+
+	n_read = 0;
+	remaining = size;
+	do
+	{
+		to_read = 4096;
+		if (to_read > remaining)
+			to_read = remaining;
+
+		ret = BIO_read_ex(x, buffer, to_read, &n_read);
+		remaining -= n_read;
+		if (!ret)
+			break;
+		
+	}
+	while (remaining > 0);
+
+	return ret;
 }
 
 KCFERROR KCF_skip_record(KCF *kcf)
@@ -157,7 +178,7 @@ KCFERROR KCF_skip_record(KCF *kcf)
 		return KCF_ERROR_INVALID_STATE;
 	}
 
-	if (kcf_fskip(kcf->File, DataSize) == -1)
+	if (!BIO_skip(kcf->Stream, DataSize))
 		return KCF_ERROR_READ;
 
 	kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
@@ -206,8 +227,8 @@ KCFERROR KCF_read_added_data(KCF *kcf, void *Destination, size_t BufferSize,
 	if (kcf->AvailableAddedData < BufferSize)
 		BufferSize = kcf->AvailableAddedData;
 
-	n_read = fread(Destination, 1, BufferSize, kcf->File);
-	if (n_read < BufferSize)
+	if (!BIO_read_ex(kcf->Stream, Destination, BufferSize, &n_read) 
+	    || n_read < BufferSize)
 		return KCF_ERROR_READ;
 
 	kcf->AvailableAddedData -= BufferSize;
