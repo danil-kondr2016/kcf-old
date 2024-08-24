@@ -1,5 +1,5 @@
-#include "stdio64.h"
 #include "archive.h"
+#include "stdio64.h"
 
 #include <stdlib.h>
 
@@ -7,7 +7,7 @@
 
 KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
 {
-	HKCF Result = NULL;
+	HKCF Result	 = NULL;
 	char *ModeString = NULL;
 	int KcfModeValue = 0;
 
@@ -41,17 +41,16 @@ KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
 	}
 
 	if (Mode == KCF_MODE_CREATE) {
-		Result->IsWriting = true;
+		Result->IsWriting   = true;
 		Result->WriterState = KCF_WRSTATE_MARKER;
-	}
-	else {
+	} else {
 		Result->ReaderState = KCF_RDSTATE_MARKER;
 	}
 
 	if (Mode == KCF_MODE_MODIFY || Mode == KCF_MODE_CREATE)
 		Result->IsWritable = true;
 	else
-	 	Result->IsWritable = false;
+		Result->IsWritable = false;
 
 	*phKCF = Result;
 	return KCF_ERROR_OK;
@@ -69,7 +68,7 @@ bool StartReadingFromArchive(HKCF hKCF)
 		FinishAddedData(hKCF);
 	fflush(hKCF->File);
 
-	hKCF->IsWriting = false;
+	hKCF->IsWriting	  = false;
 	hKCF->ReaderState = KCF_RDSTATE_IDLE;
 	return true;
 }
@@ -79,7 +78,7 @@ bool StartWritingToArchive(HKCF hKCF)
 	if (!hKCF->IsWritable)
 		return false;
 
-	hKCF->IsWriting = true;
+	hKCF->IsWriting	  = true;
 	hKCF->WriterState = KCF_WRSTATE_IDLE;
 	return true;
 }

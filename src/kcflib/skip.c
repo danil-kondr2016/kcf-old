@@ -12,13 +12,12 @@ int kcf_fskip(FILE *File, size_t SizeToSkip)
 	if (Seekable) {
 		if (kcf_fseek(File, SizeToSkip, SEEK_CUR) == -1)
 			return -1;
-	}
-	else {
+	} else {
 		char buf[1024];
 		size_t size = SizeToSkip;
 
 		while (size >= sizeof(buf)) {
-			size -= fread(buf, 1, sizeof(buf), File);	
+			size -= fread(buf, 1, sizeof(buf), File);
 			if (ferror(File))
 				return -1;
 		}

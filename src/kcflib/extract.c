@@ -1,9 +1,9 @@
 #include "files.h"
 
 #include "kcf_impl.h"
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo *FileInfo);
 
@@ -27,17 +27,16 @@ KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileInfo *FileInfo)
 
 KCFERROR SkipFile(HKCF hKCF)
 {
-	struct KcfRecord Record = {0};
+	struct KcfRecord Record	    = {0};
 	struct KcfFileInfo FileInfo = {0};
-	KCFERROR Error = KCF_ERROR_OK;
+	KCFERROR Error		    = KCF_ERROR_OK;
 
 	if (!hKCF)
 		return KCF_ERROR_INVALID_PARAMETER;
 	if (hKCF->IsWriting)
 		return KCF_ERROR_INVALID_STATE;
 
-	do
-	{
+	do {
 		Error = ReadRecord(hKCF, &Record);
 		if (Error)
 			goto cleanup;
@@ -58,8 +57,7 @@ KCFERROR SkipFile(HKCF hKCF)
 				SkipRecord(hKCF);
 			break;
 		}
-	}
-	while (Record.Header.HeadFlags & 0x01);
+	} while (Record.Header.HeadFlags & 0x01);
 
 	hKCF->UnpackerState = KCF_UPSTATE_FILE_HEADER;
 cleanup:
@@ -96,7 +94,7 @@ KCFERROR ExtractFileData(HKCF hKCF, BIO *Output)
 	/* TODO compression! */
 	do {
 		Remaining = hKCF->LastRecord.Header.AddedSize;
-		ToRead = 4096;
+		ToRead	  = 4096;
 		while (IsAddedDataAvailable(hKCF)) {
 			if (ToRead > Remaining)
 				ToRead = Remaining;
@@ -105,7 +103,8 @@ KCFERROR ExtractFileData(HKCF hKCF, BIO *Output)
 			if (Error)
 				goto cleanup2;
 
-			ret = BIO_write_ex(Output, Buffer, BytesRead, &BytesWritten);
+			ret = BIO_write_ex(Output, Buffer, BytesRead,
+					   &BytesWritten);
 			if (!ret) {
 				Error = KCF_ERROR_WRITE;
 				goto cleanup2;
@@ -117,13 +116,13 @@ KCFERROR ExtractFileData(HKCF hKCF, BIO *Output)
 			if (Error)
 				goto cleanup2;
 
-			if (hKCF->LastRecord.Header.HeadType != KCF_DATA_FRAGMENT) {
+			if (hKCF->LastRecord.Header.HeadType !=
+			    KCF_DATA_FRAGMENT) {
 				Error = KCF_ERROR_INVALID_FORMAT;
 				goto cleanup2;
 			}
 		}
-	}
-	while (hKCF->LastRecord.Header.HeadFlags & 0x01);
+	} while (hKCF->LastRecord.Header.HeadFlags & 0x01);
 
 cleanup2:
 	ClearFileInfo(&hKCF->CurrentFile);
@@ -133,10 +132,10 @@ cleanup0:
 	return Error;
 }
 
-static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo* FileInfo)
+static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo *FileInfo)
 {
 	struct KcfRecord Record = {0};
-	KCFERROR Error = KCF_ERROR_OK;
+	KCFERROR Error		= KCF_ERROR_OK;
 
 	Error = ReadRecord(hKCF, &Record);
 	if (Error)
@@ -146,7 +145,7 @@ static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo* FileInfo)
 	if (Error)
 		goto cleanup;
 
-	Error = copy_file_header(&hKCF->CurrentFile, FileInfo);
+	Error		    = copy_file_header(&hKCF->CurrentFile, FileInfo);
 	hKCF->UnpackerState = KCF_UPSTATE_FILE_DATA;
 
 cleanup:

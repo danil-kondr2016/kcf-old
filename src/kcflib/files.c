@@ -1,18 +1,17 @@
+#include "files.h"
+#include "bytepack.h"
 #include "kcferr.h"
 #include "record.h"
-#include "bytepack.h"
-#include "files.h"
 
 #include <stdlib.h>
 #include <string.h>
 
-#define KCF_FILE_HAS_TIMESTAMP  0x01
+#define KCF_FILE_HAS_TIMESTAMP	0x01
 #define KCF_FILE_HAS_FILE_CRC32 0x02
 #define KCF_FILE_HAS_UNPACKED_4 0x04
 #define KCF_FILE_HAS_UNPACKED_8 0x0C
 
-static
-int get_file_info_data_size(struct KcfFileInfo *Info)
+static int get_file_info_data_size(struct KcfFileInfo *Info)
 {
 	int result;
 	int file_name_size = 0;
@@ -49,11 +48,8 @@ int get_file_info_data_size(struct KcfFileInfo *Info)
  * non-allocated heap data. This bug can be potentially used for
  * compromising the system.
  */
-KCFERROR 
-FileInfoToRecord(
-	struct KcfFileInfo *Info,
-	struct KcfRecord *Record
-)
+KCFERROR
+FileInfoToRecord(struct KcfFileInfo *Info, struct KcfRecord *Record)
 {
 	ptrdiff_t Offset = 0;
 	size_t Size;
@@ -75,11 +71,11 @@ FileInfoToRecord(
 	ReadU8(pbuf, Size, &Offset, &flags);
 	ReadU8(pbuf, Size, &Offset, &type);
 
-	Info->HasTimeStamp = !!(flags & KCF_FILE_HAS_TIMESTAMP);
-	Info->HasFileCRC32 = !!(flags & KCF_FILE_HAS_FILE_CRC32);
+	Info->HasTimeStamp    = !!(flags & KCF_FILE_HAS_TIMESTAMP);
+	Info->HasFileCRC32    = !!(flags & KCF_FILE_HAS_FILE_CRC32);
 	Info->HasUnpackedSize = !!(flags & KCF_FILE_HAS_UNPACKED_4);
-	Info->HasUnpackedSize8 = 
-		(flags & KCF_FILE_HAS_UNPACKED_8) == KCF_FILE_HAS_UNPACKED_8;
+	Info->HasUnpackedSize8 =
+	    (flags & KCF_FILE_HAS_UNPACKED_8) == KCF_FILE_HAS_UNPACKED_8;
 
 	switch (flags & KCF_FILE_HAS_UNPACKED_8) {
 	case KCF_FILE_HAS_UNPACKED_8:
@@ -107,16 +103,13 @@ FileInfoToRecord(
 		return KCF_ERROR_OUT_OF_MEMORY;
 	}
 	Info->FileName[file_name_size] = 0;
-	memcpy(Info->FileName, pbuf+Offset, file_name_size);
+	memcpy(Info->FileName, pbuf + Offset, file_name_size);
 
 	return KCF_ERROR_OK;
 }
 
-KCFERROR 
-RecordToFileInfo(
-	struct KcfRecord *Record, 
-	struct KcfFileInfo *Info
-)
+KCFERROR
+RecordToFileInfo(struct KcfRecord *Record, struct KcfFileInfo *Info)
 {
 	int size;
 	ptrdiff_t offset = 0;
@@ -127,17 +120,21 @@ RecordToFileInfo(
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	Record->Header.HeadType = KCF_FILE_HEADER;
-	size = get_file_info_data_size(Info);
-	Record->Data = malloc(size);
+	size			= get_file_info_data_size(Info);
+	Record->Data		= malloc(size);
 	if (!Record->Data)
 		return KCF_ERROR_OUT_OF_MEMORY;
 	Record->DataSize = size;
 
 	file_flags = 0;
-	if (Info->HasTimeStamp) file_flags |= KCF_FILE_HAS_TIMESTAMP;
-	if (Info->HasFileCRC32) file_flags |= KCF_FILE_HAS_FILE_CRC32;
-	if (Info->HasUnpackedSize) file_flags |= KCF_FILE_HAS_UNPACKED_4;
-	if (Info->HasUnpackedSize8) file_flags |= KCF_FILE_HAS_UNPACKED_8;
+	if (Info->HasTimeStamp)
+		file_flags |= KCF_FILE_HAS_TIMESTAMP;
+	if (Info->HasFileCRC32)
+		file_flags |= KCF_FILE_HAS_FILE_CRC32;
+	if (Info->HasUnpackedSize)
+		file_flags |= KCF_FILE_HAS_UNPACKED_4;
+	if (Info->HasUnpackedSize8)
+		file_flags |= KCF_FILE_HAS_UNPACKED_8;
 
 	WriteU8(Record->Data, size, &offset, file_flags);
 	WriteU8(Record->Data, size, &offset, Info->FileType);
@@ -158,7 +155,6 @@ RecordToFileInfo(
 	return KCF_ERROR_OK;
 }
 
-
 void ClearFileInfo(struct KcfFileInfo *Info)
 {
 	if (Info->FileName)
@@ -167,32 +163,29 @@ void ClearFileInfo(struct KcfFileInfo *Info)
 	memset(Info, 0, sizeof(*Info));
 }
 
-bool CopyFileInfo(
-	struct KcfFileInfo *Dest, 
-	struct KcfFileInfo *Src
-)
+bool CopyFileInfo(struct KcfFileInfo *Dest, struct KcfFileInfo *Src)
 {
-	if (!Dest||!Src)
+	if (!Dest || !Src)
 		return false;
 
-	Dest->TimeStamp = Src->TimeStamp;
+	Dest->TimeStamp	   = Src->TimeStamp;
 	Dest->UnpackedSize = Src->UnpackedSize;
 
 	if (Src->FileName) {
 		int file_name_size = strlen(Src->FileName);
-		Dest->FileName = malloc(file_name_size + 1);
+		Dest->FileName	   = malloc(file_name_size + 1);
 		if (!Dest->FileName)
 			return false;
 		memcpy(Dest->FileName, Src->FileName, file_name_size);
 		Dest->FileName[file_name_size] = 0;
 	}
 
-	Dest->FileCRC32 = Src->FileCRC32;
-	Dest->CompressionInfo = Src->CompressionInfo;
-	Dest->FileType = Src->FileType;
-	Dest->HasTimeStamp = Src->HasTimeStamp;
-	Dest->HasFileCRC32 = Src->HasFileCRC32;
-	Dest->HasUnpackedSize = Src->HasUnpackedSize;
+	Dest->FileCRC32	       = Src->FileCRC32;
+	Dest->CompressionInfo  = Src->CompressionInfo;
+	Dest->FileType	       = Src->FileType;
+	Dest->HasTimeStamp     = Src->HasTimeStamp;
+	Dest->HasFileCRC32     = Src->HasFileCRC32;
+	Dest->HasUnpackedSize  = Src->HasUnpackedSize;
 	Dest->HasUnpackedSize8 = Src->HasUnpackedSize8;
 
 	return true;

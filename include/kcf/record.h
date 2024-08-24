@@ -1,6 +1,6 @@
 /**
  * \file record.h
- * 
+ *
  * Functions for working with records inisde KCF archive.
  */
 
@@ -8,57 +8,53 @@
 #ifndef _RECORD_H_
 #define _RECORD_H_
 
-#include <stdio.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #include "kcferr.h"
 
 #define KCF_HAS_ADDED_DATA_CRC32 0x20
-#define KCF_HAS_ADDED_SIZE_4 0x80
-#define KCF_HAS_ADDED_SIZE_8 0xC0
+#define KCF_HAS_ADDED_SIZE_4	 0x80
+#define KCF_HAS_ADDED_SIZE_8	 0xC0
 
-enum KcfRecordType
-{
-	KCF_MARKER         = '!',
+enum KcfRecordType {
+	KCF_MARKER	   = '!',
 	KCF_ARCHIVE_HEADER = 'A',
-	KCF_FILE_HEADER    = 'F',
+	KCF_FILE_HEADER	   = 'F',
 	KCF_DATA_FRAGMENT  = 'D',
 };
 
-struct KcfRecordHeader
-{
+struct KcfRecordHeader {
 	uint16_t HeadCRC;
-	uint8_t  HeadType;
-	uint8_t  HeadFlags;
+	uint8_t HeadType;
+	uint8_t HeadFlags;
 	uint16_t HeadSize;
 
 	union {
 		struct {
-		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			uint32_t AddedSizeLow;
 			uint32_t AddedSizeHigh;
-		#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 			uint32_t AddedSizeHigh;
 			uint32_t AddedSizeLow;
-		#else
-		#error "Unrecognized byte order"
-		#endif
+#else
+#error "Unrecognized byte order"
+#endif
 		};
 		uint64_t AddedSize;
 	};
 	uint32_t AddedDataCRC32;
 };
 
-struct KcfRecord
-{
+struct KcfRecord {
 	struct KcfRecordHeader Header;
 	uint8_t *Data;
-	size_t   DataSize;
+	size_t DataSize;
 };
 
-struct KcfArchiveHeader
-{
+struct KcfArchiveHeader {
 	uint16_t ArchiveVersion;
 };
 
@@ -81,6 +77,5 @@ void ClearArchiveHeader(struct KcfArchiveHeader *);
 bool HasAddedSize8(struct KcfRecord *);
 bool HasAddedSize4(struct KcfRecord *);
 bool HasAddedDataCRC32(struct KcfRecord *);
-
 
 #endif

@@ -1,7 +1,6 @@
 #include "files.h"
 #include "kcf_impl.h"
 
-
 KCFERROR BeginFile(HKCF hKCF, struct KcfFileInfo *FileInfo)
 {
 	KCFERROR Error = KCF_ERROR_OK;
@@ -11,8 +10,8 @@ KCFERROR BeginFile(HKCF hKCF, struct KcfFileInfo *FileInfo)
 		return KCF_ERROR_INVALID_PARAMETER;
 	if (!hKCF->IsWriting)
 		return KCF_ERROR_INVALID_STATE;
-	if (hKCF->PackerState != KCF_PKSTATE_IDLE 
-		&& hKCF->PackerState != KCF_PKSTATE_FILE_HEADER)
+	if (hKCF->PackerState != KCF_PKSTATE_IDLE &&
+	    hKCF->PackerState != KCF_PKSTATE_FILE_HEADER)
 		return KCF_ERROR_INVALID_STATE;
 
 	ClearFileInfo(&hKCF->CurrentFile);
@@ -45,17 +44,16 @@ KCFERROR InsertFileData(HKCF hKCF, BIO *Input)
 		return KCF_ERROR_INVALID_STATE;
 
 	/* TODO compression */
-	do
-	{
-		ret = BIO_read_ex(Input, Buffer, INSERT_FILE_BUFFER_SIZE, &BytesRead);
+	do {
+		ret = BIO_read_ex(Input, Buffer, INSERT_FILE_BUFFER_SIZE,
+				  &BytesRead);
 		if (!ret)
 			return KCF_ERROR_WRITE;
 
 		Error = WriteAddedData(hKCF, Buffer, BytesRead);
 		if (Error)
-			return Error;		
-	}
-	while (BytesRead > 0);
+			return Error;
+	} while (BytesRead > 0);
 
 	hKCF->PackerState = KCF_PKSTATE_AFTER_FILE_DATA;
 

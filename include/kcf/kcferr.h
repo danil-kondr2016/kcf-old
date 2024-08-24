@@ -4,8 +4,7 @@
 
 #include <stdio.h>
 
-enum KcfError
-{
+enum KcfError {
 	KCF_ERROR_OK,
 	KCF_ERROR_UNKNOWN,
 	KCF_ERROR_NOT_IMPLEMENTED,
@@ -25,8 +24,7 @@ enum KcfError
 };
 typedef enum KcfError KCFERROR;
 
-enum KcfFileSituation
-{
+enum KcfFileSituation {
 	KCF_SITUATION_READING_IN_BEGINNING,
 	KCF_SITUATION_READING_IN_MIDDLE,
 	KCF_SITUATION_WRITING,

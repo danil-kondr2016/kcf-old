@@ -2,16 +2,16 @@
 #ifndef _ARCHIVE_H_
 #define _ARCHIVE_H_
 
-#include <stdio.h>
-#include <stdint.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
-#include "record.h"
 #include "kcferr.h"
+#include "record.h"
 
 typedef struct Kcf *HKCF, **PHKCF;
 
-#define KCF_MODE_READ   0x01
+#define KCF_MODE_READ	0x01
 #define KCF_MODE_CREATE 0x02
 #define KCF_MODE_MODIFY 0x03
 
@@ -21,13 +21,13 @@ void CloseArchive(HKCF hKCF);
 /* Write/read mode functions */
 
 /**
- * Switches to write mode. Won't work if file is not open for writing 
+ * Switches to write mode. Won't work if file is not open for writing
  * or modifying.
  */
 bool StartWritingToArchive(HKCF hKCF);
 
 /**
- * Switches to read mode. If any added data have been written, it will 
+ * Switches to read mode. If any added data have been written, it will
  * be finished before switching to read mode.
  */
 bool StartReadingFromArchive(HKCF hKCF);
@@ -55,13 +55,13 @@ KCFERROR SkipRecord(HKCF hKCF);
 
 bool IsAddedDataAvailable(HKCF hKCF);
 KCFERROR ReadAddedData(HKCF hKCF, void *Destination, size_t BufferSize,
-		size_t *BytesRead);
+		       size_t *BytesRead);
 
 /* Write functions */
 
 /**
  * \brief Writes the KCF archive marker "KC!\x1A\6\0".
- * 
+ *
  * \param[in] hKCF handle to KCF archive
  * \return `KCF_ERROR_OK` if success, `KCF_ERROR_WRITE` if failed to write
  */
@@ -75,7 +75,7 @@ KCFERROR WriteArchiveMarker(HKCF hKCF);
  * You can also set flag `KCF_HAS_ADDED_SIZE_CRC32` to calculate CRC32
  * of record's added data during writing.
  *
- * If added data has not been finished, it will be finished when this 
+ * If added data has not been finished, it will be finished when this
  * function is called.
  */
 KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record);
@@ -88,8 +88,8 @@ KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record);
  * flag `KCF_HAS_ADDED_SIZE_4` is set. If flag `KCF_HAS_ADDED_SIZE_CRC32`
  * is set, CRC32 of added data will be written into the record.
  */
-KCFERROR WriteRecordWithAddedData(HKCF hKCF, struct KcfRecord *Record, 
-	uint8_t *AddedData, size_t Size);
+KCFERROR WriteRecordWithAddedData(HKCF hKCF, struct KcfRecord *Record,
+				  uint8_t *AddedData, size_t Size);
 
 /**
  * \brief Writes added data into the archive. Should be called after
@@ -98,9 +98,9 @@ KCFERROR WriteRecordWithAddedData(HKCF hKCF, struct KcfRecord *Record,
 KCFERROR WriteAddedData(HKCF hKCF, uint8_t *AddedData, size_t Size);
 
 /**
- * \brief Finishes writing of added data into the archive. Patches 
+ * \brief Finishes writing of added data into the archive. Patches
  * forward pointers inside the header so this function will return
- * an error on non-seekable data streams. 
+ * an error on non-seekable data streams.
  */
 KCFERROR FinishAddedData(HKCF hKCF);
 

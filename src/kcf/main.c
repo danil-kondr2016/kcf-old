@@ -38,15 +38,17 @@ int main(int argc, char **argv)
 	char *Command;
 
 	Program = argv[0];
-	
+
 	if (argc < 2) {
 		return help();
 	}
 
 	Command = argv[1];
 
-	argc--; argc--;
-	argv++; argv++;
+	argc--;
+	argc--;
+	argv++;
+	argv++;
 
 	if (Command[1] == '\0') {
 		switch (Command[0]) {
@@ -57,9 +59,8 @@ int main(int argc, char **argv)
 		default:
 			return invalid_command(Command);
 		}
-	}
-	else {
-	   return invalid_command(Command);
+	} else {
+		return invalid_command(Command);
 	}
 
 	return 1;
@@ -72,30 +73,27 @@ static int pack(int argc, char **argv)
 	KCFERROR Error;
 
 	OutputName = argv[0];
-	argc--; argv++;
+	argc--;
+	argv++;
 
 	Error = CreateArchive(OutputName, KCF_MODE_CREATE, &Output);
 	if (Error) {
-		printf("%s: failed to create archive %s: %s\n", 
-				Program, 
-				OutputName, 
-				GetKcfErrorString(Error));
+		printf("%s: failed to create archive %s: %s\n", Program,
+		       OutputName, GetKcfErrorString(Error));
 		return 1;
 	}
 
 	printf("Creating archive %s...\n", OutputName);
 
 	WriteArchiveMarker(Output);
-	WriteArchiveHeader(Output,  0);
+	WriteArchiveHeader(Output, 0);
 
 	for (InputName = *argv; InputName; argv++, argc--, InputName = *argv) {
 		printf("Packing file %s...\n", InputName);
 		Error = PackFile(Output, InputName, 0);
 		if (Error) {
-			printf("%s: failed to pack file %s: %s\n", 
-					Program, 
-					InputName, 
-					GetKcfErrorString(Error));
+			printf("%s: failed to pack file %s: %s\n", Program,
+			       InputName, GetKcfErrorString(Error));
 			return 1;
 		}
 	}
@@ -114,14 +112,13 @@ static int unpack(int argc, char **argv)
 	struct KcfRecord Record;
 
 	ArchiveName = *argv;
-	argc--; argv++;
+	argc--;
+	argv++;
 
 	Error = CreateArchive(ArchiveName, KCF_MODE_READ, &Archive);
 	if (Error) {
-		printf("%s: failed to create archive %s: %s\n", 
-				Program, 
-				ArchiveName, 
-				GetKcfErrorString(Error));
+		printf("%s: failed to create archive %s: %s\n", Program,
+		       ArchiveName, GetKcfErrorString(Error));
 		return 1;
 	}
 
@@ -129,10 +126,8 @@ static int unpack(int argc, char **argv)
 	ReadRecord(Archive, &Record);
 	Error = RecordToArchiveHeader(&Record, &Header);
 	if (Error) {
-		printf("%s: %s: %s\n", 
-				Program, 
-				ArchiveName, 
-				GetKcfErrorString(Error));
+		printf("%s: %s: %s\n", Program, ArchiveName,
+		       GetKcfErrorString(Error));
 		return 1;
 	}
 
@@ -144,12 +139,10 @@ static int unpack(int argc, char **argv)
 	CloseArchive(Archive);
 
 	if (Error) {
-		printf("%s: %s: %s\n", 
-				Program, 
-				ArchiveName, 
-				GetKcfErrorString(Error));
+		printf("%s: %s: %s\n", Program, ArchiveName,
+		       GetKcfErrorString(Error));
 		return 1;
 	}
-	
+
 	return 0;
 }
