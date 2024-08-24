@@ -118,8 +118,7 @@ KCFERROR KCF_extract(KCF *kcf, BIO *Output)
 			if (Error)
 				goto cleanup2;
 
-			if (kcf->LastRecord.HeadType !=
-			    KCF_DATA_FRAGMENT) {
+			if (kcf->LastRecord.HeadType != KCF_DATA_FRAGMENT) {
 				Error = KCF_ERROR_INVALID_FORMAT;
 				goto cleanup2;
 			}

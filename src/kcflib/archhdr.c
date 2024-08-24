@@ -34,7 +34,7 @@ KCFERROR rec_from_archive_header(struct KcfArchiveHeader *Header,
 
 	Record->Data = malloc(2);
 	WriteU16LE(Record->Data, 2, NULL, Header->ArchiveVersion);
-	Record->DataSize         = 2;
+	Record->DataSize  = 2;
 	Record->HeadFlags = 0;
 	Record->HeadType  = KCF_ARCHIVE_HEADER;
 	rec_fix(Record);

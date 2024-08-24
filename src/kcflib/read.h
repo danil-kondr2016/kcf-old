@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include <kcf/errors.h>
+
 #include "record.h"
 
 /**

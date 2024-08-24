@@ -76,8 +76,7 @@ KCFERROR KCF_write_record_with_added_data(KCF *kcf, struct KcfRecord *Record,
 	/* Ensure that record CRC32 is valid */
 	if (AddedData && Size) {
 		if (rec_has_added_data_CRC(Record)) {
-			Record->AddedDataCRC32 =
-			    crc32c(0, AddedData, Size);
+			Record->AddedDataCRC32 = crc32c(0, AddedData, Size);
 		}
 
 		if (Size > 2147483647) {
@@ -172,8 +171,7 @@ KCFERROR KCF_finish_added_data(KCF *kcf)
 	buffer = malloc(kcf->LastRecord.HeadSize);
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
-	rec_to_buffer(&kcf->LastRecord, buffer,
-	              kcf->LastRecord.HeadSize);
+	rec_to_buffer(&kcf->LastRecord, buffer, kcf->LastRecord.HeadSize);
 
 	if (!fwrite(buffer, kcf->LastRecord.HeadSize, 1, kcf->File))
 		return trace_kcf_error(

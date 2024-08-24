@@ -45,7 +45,7 @@ struct KcfRecord {
 		uint64_t AddedSize;
 	};
 	uint32_t AddedDataCRC32;
-	
+
 	uint8_t *Data;
 	size_t DataSize;
 };

@@ -45,11 +45,6 @@ enum KcfPackerState {
 };
 
 struct kcf_st {
-	int64_t (*read)(uintptr_t file, void *buffer, int64_t size);
-	int64_t (*write)(uintptr_t file, const void *buffer, int64_t size);
-	int64_t (*seek)(uintptr_t file, int64_t offset, int whence);
-	int64_t (*tell)(uintptr_t file);
-
 	union {
 		uint64_t AvailableAddedData;
 		uint64_t AddedDataToBeWritten;
@@ -138,9 +133,8 @@ static inline KCFERROR trace_kcf_error(KCFERROR Error)
 
 static inline void trace_kcf_record(struct KcfRecord *Record)
 {
-	trace_kcf_msg("REC %04X %02X %02X %5u %20llu %08X",
-	              Record->HeadCRC, Record->HeadType,
-	              Record->HeadFlags, Record->HeadSize,
+	trace_kcf_msg("REC %04X %02X %02X %5u %20llu %08X", Record->HeadCRC,
+	              Record->HeadType, Record->HeadFlags, Record->HeadSize,
 	              Record->AddedSize, Record->AddedDataCRC32);
 	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
 }

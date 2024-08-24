@@ -121,8 +121,8 @@ record_to_file_info(struct KcfRecord *Record, struct KcfFileInfo *Info)
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	Record->HeadType = KCF_FILE_HEADER;
-	size                    = get_file_info_data_size(Info);
-	Record->Data            = malloc(size);
+	size             = get_file_info_data_size(Info);
+	Record->Data     = malloc(size);
 	if (!Record->Data)
 		return KCF_ERROR_OUT_OF_MEMORY;
 	Record->DataSize = size;

@@ -38,12 +38,10 @@ uint16_t rec_calculate_CRC(struct KcfRecord *Record)
 
 	switch (Record->HeadFlags & KCF_HAS_ADDED_SIZE_8) {
 	case KCF_HAS_ADDED_SIZE_4:
-		WriteU32LE(Buffer, sizeof(Buffer), &Offset,
-		           Record->AddedSize);
+		WriteU32LE(Buffer, sizeof(Buffer), &Offset, Record->AddedSize);
 		break;
 	case KCF_HAS_ADDED_SIZE_8:
-		WriteU64LE(Buffer, sizeof(Buffer), &Offset,
-		           Record->AddedSize);
+		WriteU64LE(Buffer, sizeof(Buffer), &Offset, Record->AddedSize);
 		break;
 	}
 
@@ -84,21 +82,17 @@ bool rec_to_buffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size)
 	if (Size < Record->HeadSize)
 		return false;
 
-	result =
-	    result && WriteU16LE(Buffer, Size, &Offset, Record->HeadCRC);
-	result =
-	    result && WriteU8(Buffer, Size, &Offset, Record->HeadType);
-	result =
-	    result && WriteU8(Buffer, Size, &Offset, Record->HeadFlags);
-	result = result &&
-	         WriteU16LE(Buffer, Size, &Offset, Record->HeadSize);
+	result = result && WriteU16LE(Buffer, Size, &Offset, Record->HeadCRC);
+	result = result && WriteU8(Buffer, Size, &Offset, Record->HeadType);
+	result = result && WriteU8(Buffer, Size, &Offset, Record->HeadFlags);
+	result = result && WriteU16LE(Buffer, Size, &Offset, Record->HeadSize);
 
 	if (rec_has_added_size_8(Record))
-		result = result && WriteU64LE(Buffer, Size, &Offset,
-		                              Record->AddedSize);
+		result = result &&
+		         WriteU64LE(Buffer, Size, &Offset, Record->AddedSize);
 	else if (rec_has_added_size_4(Record))
-		result = result && WriteU32LE(Buffer, Size, &Offset,
-		                              Record->AddedSize);
+		result = result &&
+		         WriteU32LE(Buffer, Size, &Offset, Record->AddedSize);
 
 	if (rec_has_added_data_CRC(Record))
 		result = result && WriteU32LE(Buffer, Size, &Offset,
@@ -134,14 +128,14 @@ KCFERROR rec_copy(struct KcfRecord *Destination, struct KcfRecord *Source)
 	assert(Destination);
 	assert(Source);
 
-	Destination->HeadCRC = Source->HeadCRC;
+	Destination->HeadCRC   = Source->HeadCRC;
 	Destination->HeadFlags = Source->HeadFlags;
-	Destination->HeadType = Source->HeadType;
-	Destination->HeadSize = Source->HeadSize;
+	Destination->HeadType  = Source->HeadType;
+	Destination->HeadSize  = Source->HeadSize;
 
-	Destination->AddedSize = Source->AddedSize;
+	Destination->AddedSize      = Source->AddedSize;
 	Destination->AddedDataCRC32 = Source->AddedDataCRC32;
-	
+
 	Destination->DataSize = Source->DataSize;
 	if (Source->Data) {
 		Destination->Data = malloc(Source->DataSize);

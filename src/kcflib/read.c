@@ -37,9 +37,8 @@ static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
 	ReadU8(buffer, 6, &hdr_size, &Record->HeadFlags);
 	ReadU16LE(buffer, 6, &hdr_size, &Record->HeadSize);
 
-	trace_kcf_msg("read_record_header %04X %02X %02X %04X",
-	              Record->HeadCRC, Record->HeadType,
-	              Record->HeadFlags, Record->HeadSize);
+	trace_kcf_msg("read_record_header %04X %02X %02X %04X", Record->HeadCRC,
+	              Record->HeadType, Record->HeadFlags, Record->HeadSize);
 
 	Record->AddedSize = 0;
 
@@ -70,7 +69,7 @@ static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
 		ReadU32LE(buffer, 18, &hdr_size, &Record->AddedDataCRC32);
 		kcf->AddedDataCRC32 = Record->AddedDataCRC32;
 	} else {
-		kcf->AddedDataCRC32       = 0;
+		kcf->AddedDataCRC32    = 0;
 		Record->AddedDataCRC32 = 0;
 	}
 
