@@ -3,8 +3,8 @@
 #define _KCF_IMPL_H_
 
 #include <kcf/archive.h>
-#include <kcf/files.h>
 #include <kcf/errors.h>
+#include <kcf/files.h>
 #include <kcf/record.h>
 
 #include <inttypes.h>
@@ -41,7 +41,7 @@ enum KcfPackerState {
 	KCF_PKSTATE_AFTER_FILE_DATA,
 };
 
-struct Kcf {
+struct kcf_st {
 	union {
 		uint64_t AvailableAddedData;
 		uint64_t AddedDataToBeWritten;
@@ -79,18 +79,18 @@ struct Kcf {
 };
 
 #ifdef _KCF_TRACE
-static inline void trace_kcf_state(HKCF hKCF)
+static inline void trace_kcf_state(KCF *kcf)
 {
 	fputs("##KCFDEBUG## ", stderr);
 	fprintf(stderr,
 	        "%p %" PRId64 " %" PRId64 " %08" PRIx32 " %08" PRIx32
 	        " %" PRId64 " %" PRId64 " %c%c%c %d",
-	        hKCF, hKCF->AvailableAddedData, hKCF->AddedDataAlreadyRead,
-	        hKCF->AddedDataCRC32, hKCF->ActualAddedDataCRC32,
-	        hKCF->RecordOffset, hKCF->RecordEndOffset,
-	        hKCF->HasAddedDataCRC32 ? 'C' : '-',
-	        hKCF->HasAddedSize ? 'A' : '-', hKCF->IsWriting ? 'W' : 'R',
-	        hKCF->ReaderState);
+	        kcf, kcf->AvailableAddedData, kcf->AddedDataAlreadyRead,
+	        kcf->AddedDataCRC32, kcf->ActualAddedDataCRC32,
+	        kcf->RecordOffset, kcf->RecordEndOffset,
+	        kcf->HasAddedDataCRC32 ? 'C' : '-',
+	        kcf->HasAddedSize ? 'A' : '-', kcf->IsWriting ? 'W' : 'R',
+	        kcf->ReaderState);
 	fputc('\n', stderr);
 }
 
@@ -137,7 +137,7 @@ static inline void trace_kcf_record(struct KcfRecord *Record)
 	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
 }
 #else
-static inline void trace_kcf_state(HKCF hKCF) {}
+static inline void trace_kcf_state(KCF *kcf) {}
 
 static inline void trace_kcf_msg(const char *format, ...) {}
 

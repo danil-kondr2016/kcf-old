@@ -10,12 +10,12 @@
 #define MARKER_5 0x06
 #define MARKER_6 0x00
 
-KCFERROR ScanArchiveForMarker(HKCF hKCF)
+KCFERROR KCF_find_marker(KCF *kcf)
 {
 	uint8_t buf[6] = {0};
 	size_t n_read  = 0;
 
-	if (hKCF->IsWriting || hKCF->ReaderState != KCF_RDSTATE_MARKER)
+	if (kcf->IsWriting || kcf->ReaderState != KCF_RDSTATE_MARKER)
 		return KCF_ERROR_INVALID_STATE;
 
 	do {
@@ -30,36 +30,36 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 		buf[3] = buf[4];
 		buf[4] = buf[5];
 
-		n_read = fread(&buf[5], 1, 1, hKCF->File);
+		n_read = fread(&buf[5], 1, 1, kcf->File);
 	} while (n_read);
 
-	if (ferror(hKCF->File))
+	if (ferror(kcf->File))
 		return KCF_ERROR_READ;
 
 	return KCF_ERROR_INVALID_FORMAT;
 ok:
-	hKCF->ReaderState = KCF_RDSTATE_RECORD_HEADER;
+	kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
 	return KCF_ERROR_OK;
 }
 
-KCFERROR WriteArchiveMarker(HKCF hKCF)
+KCFERROR KCF_write_marker(KCF *kcf)
 {
-	if (!hKCF->IsWriting || hKCF->WriterState != KCF_WRSTATE_MARKER)
+	if (!kcf->IsWriting || kcf->WriterState != KCF_WRSTATE_MARKER)
 		return KCF_ERROR_INVALID_STATE;
 
-	if (fputc(MARKER_1, hKCF->File) == EOF)
+	if (fputc(MARKER_1, kcf->File) == EOF)
 		return KCF_ERROR_WRITE;
-	if (fputc(MARKER_2, hKCF->File) == EOF)
+	if (fputc(MARKER_2, kcf->File) == EOF)
 		return KCF_ERROR_WRITE;
-	if (fputc(MARKER_3, hKCF->File) == EOF)
+	if (fputc(MARKER_3, kcf->File) == EOF)
 		return KCF_ERROR_WRITE;
-	if (fputc(MARKER_4, hKCF->File) == EOF)
+	if (fputc(MARKER_4, kcf->File) == EOF)
 		return KCF_ERROR_WRITE;
-	if (fputc(MARKER_5, hKCF->File) == EOF)
+	if (fputc(MARKER_5, kcf->File) == EOF)
 		return KCF_ERROR_WRITE;
-	if (fputc(MARKER_6, hKCF->File) == EOF)
+	if (fputc(MARKER_6, kcf->File) == EOF)
 		return KCF_ERROR_WRITE;
 
-	hKCF->WriterState = KCF_WRSTATE_IDLE;
+	kcf->WriterState = KCF_WRSTATE_IDLE;
 	return KCF_ERROR_OK;
 }

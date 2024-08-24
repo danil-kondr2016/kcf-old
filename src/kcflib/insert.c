@@ -2,46 +2,46 @@
 
 #include "kcf_impl.h"
 
-KCFERROR BeginFile(HKCF hKCF, struct KcfFileInfo *FileInfo)
+KCFERROR KCF_begin_file(KCF *kcf, struct KcfFileInfo *FileInfo)
 {
 	KCFERROR Error = KCF_ERROR_OK;
 	struct KcfRecord Record;
 
-	if (!hKCF || !FileInfo)
+	if (!kcf || !FileInfo)
 		return KCF_ERROR_INVALID_PARAMETER;
-	if (!hKCF->IsWriting)
+	if (!kcf->IsWriting)
 		return KCF_ERROR_INVALID_STATE;
-	if (hKCF->PackerState != KCF_PKSTATE_IDLE &&
-	    hKCF->PackerState != KCF_PKSTATE_FILE_HEADER)
+	if (kcf->PackerState != KCF_PKSTATE_IDLE &&
+	    kcf->PackerState != KCF_PKSTATE_FILE_HEADER)
 		return KCF_ERROR_INVALID_STATE;
 
-	ClearFileInfo(&hKCF->CurrentFile);
-	CopyFileInfo(&hKCF->CurrentFile, FileInfo);
+	file_info_clear(&kcf->CurrentFile);
+	file_info_copy(&kcf->CurrentFile, FileInfo);
 
-	FileInfoToRecord(FileInfo, &Record);
-	Error = WriteRecord(hKCF, &Record);
+	file_info_to_record(FileInfo, &Record);
+	Error = KCF_write_record(kcf, &Record);
 	if (Error)
 		return Error;
 
-	hKCF->PackerState = KCF_PKSTATE_FILE_DATA;
+	kcf->PackerState = KCF_PKSTATE_FILE_DATA;
 
 	return Error;
 }
 
 #define INSERT_FILE_BUFFER_SIZE 4096
 
-KCFERROR InsertFileData(HKCF hKCF, BIO *Input)
+KCFERROR KCF_insert_file_data(KCF *kcf, BIO *Input)
 {
 	uint8_t Buffer[INSERT_FILE_BUFFER_SIZE];
 	size_t BytesRead, BytesWritten;
 	int ret;
 	KCFERROR Error;
 
-	if (!hKCF)
+	if (!kcf)
 		return KCF_ERROR_INVALID_PARAMETER;
-	if (!hKCF->IsWriting)
+	if (!kcf->IsWriting)
 		return KCF_ERROR_INVALID_STATE;
-	if (hKCF->PackerState != KCF_PKSTATE_FILE_DATA)
+	if (kcf->PackerState != KCF_PKSTATE_FILE_DATA)
 		return KCF_ERROR_INVALID_STATE;
 
 	/* TODO compression */
@@ -51,31 +51,31 @@ KCFERROR InsertFileData(HKCF hKCF, BIO *Input)
 		if (!ret)
 			return KCF_ERROR_WRITE;
 
-		Error = WriteAddedData(hKCF, Buffer, BytesRead);
+		Error = KCF_write_added_data(kcf, Buffer, BytesRead);
 		if (Error)
 			return Error;
 	} while (BytesRead > 0);
 
-	hKCF->PackerState = KCF_PKSTATE_AFTER_FILE_DATA;
+	kcf->PackerState = KCF_PKSTATE_AFTER_FILE_DATA;
 
 	return Error;
 }
 
-KCFERROR EndFile(HKCF hKCF)
+KCFERROR KCF_end_file(KCF *kcf)
 {
 	KCFERROR Error = KCF_ERROR_OK;
 
-	if (!hKCF)
+	if (!kcf)
 		return KCF_ERROR_INVALID_PARAMETER;
-	if (!hKCF->IsWriting)
+	if (!kcf->IsWriting)
 		return KCF_ERROR_INVALID_STATE;
-	if (hKCF->PackerState != KCF_PKSTATE_AFTER_FILE_DATA)
+	if (kcf->PackerState != KCF_PKSTATE_AFTER_FILE_DATA)
 		return KCF_ERROR_INVALID_STATE;
 
-	Error = FinishAddedData(hKCF);
+	Error = KCF_finish_added_data(kcf);
 	if (Error)
 		return Error;
 
-	hKCF->PackerState = KCF_PKSTATE_FILE_HEADER;
+	kcf->PackerState = KCF_PKSTATE_FILE_HEADER;
 	return Error;
 }

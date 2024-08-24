@@ -7,7 +7,7 @@
 #include "bytepack.h"
 #include "crc32c.h"
 
-void ClearRecord(struct KcfRecord *Record)
+void rec_clear(struct KcfRecord *Record)
 {
 	assert(Record);
 
@@ -24,7 +24,7 @@ void ClearRecord(struct KcfRecord *Record)
 	Record->Header.AddedDataCRC32 = 0;
 }
 
-uint16_t CalculateRecordCRC(struct KcfRecord *Record)
+uint16_t rec_calculate_CRC(struct KcfRecord *Record)
 {
 	uint32_t CRC       = 0;
 	uint16_t CRC16     = 0;
@@ -60,30 +60,24 @@ uint16_t CalculateRecordCRC(struct KcfRecord *Record)
 	return CRC16;
 }
 
-bool ValidateRecord(struct KcfRecord *Record)
+bool rec_validate(struct KcfRecord *Record)
 {
-	return Record && (CalculateRecordCRC(Record) == Record->Header.HeadCRC);
+	return Record && (rec_calculate_CRC(Record) == Record->Header.HeadCRC);
 }
 
-bool HasAddedSize8(struct KcfRecord *Record)
+bool rec_has_added_size_8(struct KcfRecord *Record)
 {
 	return Record && ((Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_8) ==
 	                  KCF_HAS_ADDED_SIZE_8);
 }
 
-bool HasAddedSize4(struct KcfRecord *Record)
+bool rec_has_added_size_4(struct KcfRecord *Record)
 {
 	return Record && ((Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_8) ==
 	                  KCF_HAS_ADDED_SIZE_4);
 }
 
-bool HasAddedDataCRC32(struct KcfRecord *Record)
-{
-	return Record &&
-	       ((Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32) != 0);
-}
-
-bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size)
+bool rec_to_buffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size)
 {
 	ptrdiff_t Offset = 0;
 	bool result      = true;
@@ -100,14 +94,14 @@ bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size)
 	result = result &&
 	         WriteU16LE(Buffer, Size, &Offset, Record->Header.HeadSize);
 
-	if (HasAddedSize8(Record))
+	if (rec_has_added_size_8(Record))
 		result = result && WriteU64LE(Buffer, Size, &Offset,
 		                              Record->Header.AddedSize);
-	else if (HasAddedSize4(Record))
+	else if (rec_has_added_size_4(Record))
 		result = result && WriteU32LE(Buffer, Size, &Offset,
 		                              Record->Header.AddedSize);
 
-	if (HasAddedDataCRC32(Record))
+	if (rec_has_added_data_CRC(Record))
 		result = result && WriteU32LE(Buffer, Size, &Offset,
 		                              Record->Header.AddedDataCRC32);
 
@@ -115,7 +109,7 @@ bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size)
 	return result;
 }
 
-void FixRecord(struct KcfRecord *Record)
+void rec_fix(struct KcfRecord *Record)
 {
 	assert(Record);
 
@@ -133,10 +127,10 @@ void FixRecord(struct KcfRecord *Record)
 		Record->Header.HeadSize += 4;
 	}
 
-	Record->Header.HeadCRC = CalculateRecordCRC(Record);
+	Record->Header.HeadCRC = rec_calculate_CRC(Record);
 }
 
-KCFERROR CopyRecord(struct KcfRecord *Destination, struct KcfRecord *Source)
+KCFERROR rec_copy(struct KcfRecord *Destination, struct KcfRecord *Source)
 {
 	assert(Destination);
 	assert(Source);

@@ -1,17 +1,17 @@
 #include <kcf/archive.h>
+#include <kcf/errors.h>
 
 #include <stdlib.h>
 
-#include "stdio64.h"
 #include "kcf_impl.h"
+#include "stdio64.h"
 
-KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
+KCFERROR KCF_create(char *Path, int Mode, KCF **pkcf)
 {
-	HKCF Result      = NULL;
-	char *ModeString = NULL;
-	int KcfModeValue = 0;
+	KCF *result    = NULL;
+	char *mode_str = NULL;
 
-	if (!phKCF)
+	if (!pkcf)
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	if (!Path)
@@ -19,66 +19,66 @@ KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
 
 	switch (Mode) {
 	case KCF_MODE_READ:
-		ModeString = "rb";
+		mode_str = "rb";
 		break;
 	case KCF_MODE_CREATE:
-		ModeString = "w+b";
+		mode_str = "w+b";
 		break;
 	case KCF_MODE_MODIFY:
-		ModeString = "r+b";
+		mode_str = "r+b";
 		break;
 	default:
 		return KCF_ERROR_INVALID_PARAMETER;
 	}
 
-	Result = calloc(sizeof(struct Kcf), 1);
-	if (!Result)
+	result = calloc(sizeof(struct kcf_st), 1);
+	if (!result)
 		return KCF_ERROR_OUT_OF_MEMORY;
 
-	Result->File = kcf_fopen(Path, ModeString);
-	if (!Result->File) {
-		return ErrnoToKcf();
+	result->File = kcf_fopen(Path, mode_str);
+	if (!result->File) {
+		return kcf_errno();
 	}
 
 	if (Mode == KCF_MODE_CREATE) {
-		Result->IsWriting   = true;
-		Result->WriterState = KCF_WRSTATE_MARKER;
+		result->IsWriting   = true;
+		result->WriterState = KCF_WRSTATE_MARKER;
 	} else {
-		Result->ReaderState = KCF_RDSTATE_MARKER;
+		result->ReaderState = KCF_RDSTATE_MARKER;
 	}
 
 	if (Mode == KCF_MODE_MODIFY || Mode == KCF_MODE_CREATE)
-		Result->IsWritable = true;
+		result->IsWritable = true;
 	else
-		Result->IsWritable = false;
+		result->IsWritable = false;
 
-	*phKCF = Result;
+	*pkcf = result;
 	return KCF_ERROR_OK;
 }
 
-void CloseArchive(HKCF hKCF)
+void KCF_close(KCF *kcf)
 {
-	fclose(hKCF->File);
-	free(hKCF);
+	fclose(kcf->File);
+	free(kcf);
 }
 
-bool StartReadingFromArchive(HKCF hKCF)
+bool KCF_start_reading(KCF *kcf)
 {
-	if (hKCF->WriterState == KCF_WRSTATE_ADDED_DATA)
-		FinishAddedData(hKCF);
-	fflush(hKCF->File);
+	if (kcf->WriterState == KCF_WRSTATE_ADDED_DATA)
+		KCF_finish_added_data(kcf);
+	fflush(kcf->File);
 
-	hKCF->IsWriting   = false;
-	hKCF->ReaderState = KCF_RDSTATE_IDLE;
+	kcf->IsWriting   = false;
+	kcf->ReaderState = KCF_RDSTATE_IDLE;
 	return true;
 }
 
-bool StartWritingToArchive(HKCF hKCF)
+bool KCF_start_writing(KCF *kcf)
 {
-	if (!hKCF->IsWritable)
+	if (!kcf->IsWritable)
 		return false;
 
-	hKCF->IsWriting   = true;
-	hKCF->WriterState = KCF_WRSTATE_IDLE;
+	kcf->IsWriting   = true;
+	kcf->WriterState = KCF_WRSTATE_IDLE;
 	return true;
 }

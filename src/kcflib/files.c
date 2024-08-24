@@ -1,5 +1,5 @@
-#include <kcf/files.h>
 #include <kcf/errors.h>
+#include <kcf/files.h>
 #include <kcf/record.h>
 
 #include <stdlib.h>
@@ -50,7 +50,7 @@ static int get_file_info_data_size(struct KcfFileInfo *Info)
  * compromising the system.
  */
 KCFERROR
-FileInfoToRecord(struct KcfFileInfo *Info, struct KcfRecord *Record)
+file_info_to_record(struct KcfFileInfo *Info, struct KcfRecord *Record)
 {
 	ptrdiff_t Offset = 0;
 	size_t Size;
@@ -62,7 +62,7 @@ FileInfoToRecord(struct KcfFileInfo *Info, struct KcfRecord *Record)
 	if (!Record || !Info)
 		return KCF_ERROR_INVALID_PARAMETER;
 
-	if (!ValidateRecord(Record))
+	if (!rec_validate(Record))
 		return KCF_ERROR_INVALID_DATA;
 	if (Record->Header.HeadType != KCF_FILE_HEADER)
 		return KCF_ERROR_INVALID_DATA;
@@ -110,7 +110,7 @@ FileInfoToRecord(struct KcfFileInfo *Info, struct KcfRecord *Record)
 }
 
 KCFERROR
-RecordToFileInfo(struct KcfRecord *Record, struct KcfFileInfo *Info)
+record_to_file_info(struct KcfRecord *Record, struct KcfFileInfo *Info)
 {
 	int size;
 	ptrdiff_t offset = 0;
@@ -152,11 +152,11 @@ RecordToFileInfo(struct KcfRecord *Record, struct KcfFileInfo *Info)
 	WriteU16LE(Record->Data, size, &offset, file_name_size);
 	memcpy(Record->Data + offset, Info->FileName, file_name_size);
 
-	FixRecord(Record);
+	rec_fix(Record);
 	return KCF_ERROR_OK;
 }
 
-void ClearFileInfo(struct KcfFileInfo *Info)
+void file_info_clear(struct KcfFileInfo *Info)
 {
 	if (Info->FileName)
 		free(Info->FileName);
@@ -164,7 +164,7 @@ void ClearFileInfo(struct KcfFileInfo *Info)
 	memset(Info, 0, sizeof(*Info));
 }
 
-bool CopyFileInfo(struct KcfFileInfo *Dest, struct KcfFileInfo *Src)
+bool file_info_copy(struct KcfFileInfo *Dest, struct KcfFileInfo *Src)
 {
 	if (!Dest || !Src)
 		return false;

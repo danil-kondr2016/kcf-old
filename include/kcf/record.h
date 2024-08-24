@@ -10,7 +10,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "errors.h"
 
@@ -60,22 +59,40 @@ struct KcfArchiveHeader {
 
 /* Record manipulation functions */
 
-uint16_t CalculateRecordCRC(struct KcfRecord *Record);
-bool ValidateRecord(struct KcfRecord *Record);
-void FixRecord(struct KcfRecord *Record);
-void ClearRecord(struct KcfRecord *Record);
-KCFERROR CopyRecord(struct KcfRecord *Destination, struct KcfRecord *Source);
+uint16_t rec_calculate_CRC(struct KcfRecord *Record);
+bool rec_validate(struct KcfRecord *Record);
+void rec_fix(struct KcfRecord *Record);
+void rec_clear(struct KcfRecord *Record);
+KCFERROR rec_copy(struct KcfRecord *Destination, struct KcfRecord *Source);
 
-bool RecordToBuffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size);
+bool rec_to_buffer(struct KcfRecord *Record, uint8_t *Buffer, size_t Size);
 
-KCFERROR RecordToArchiveHeader(struct KcfRecord *, struct KcfArchiveHeader *);
-KCFERROR ArchiveHeaderToRecord(struct KcfArchiveHeader *, struct KcfRecord *);
-void ClearArchiveHeader(struct KcfArchiveHeader *);
+KCFERROR rec_to_archive_header(struct KcfRecord *, struct KcfArchiveHeader *);
+KCFERROR rec_from_archive_header(struct KcfArchiveHeader *, struct KcfRecord *);
+void ahdr_clear(struct KcfArchiveHeader *);
 
 /* Flag probing functions */
 
-bool HasAddedSize8(struct KcfRecord *);
-bool HasAddedSize4(struct KcfRecord *);
-bool HasAddedDataCRC32(struct KcfRecord *);
+static inline bool rec_has_added_size(struct KcfRecord *record)
+{
+	if (!record)
+		return false;
+
+	if (record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_4)
+		return true;
+
+	return false;
+}
+
+static inline bool rec_has_added_data_CRC(struct KcfRecord *record)
+{
+	if (!record)
+		return false;
+
+	return !!(record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
+}
+
+bool rec_has_added_size_8(struct KcfRecord *);
+bool rec_has_added_size_4(struct KcfRecord *);
 
 #endif

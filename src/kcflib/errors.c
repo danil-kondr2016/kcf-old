@@ -2,7 +2,7 @@
 
 #include <errno.h>
 
-KCFERROR ErrnoToKcf()
+KCFERROR kcf_errno()
 {
 	int Error = errno;
 
@@ -20,7 +20,7 @@ KCFERROR ErrnoToKcf()
 	}
 }
 
-KCFERROR FileErrorToKcf(FILE *File, enum KcfFileSituation Situation)
+KCFERROR kcf_file_error(FILE *File, enum KcfFileSituation Situation)
 {
 	if (!File)
 		return KCF_ERROR_OK;
@@ -64,7 +64,7 @@ static const char *_KcfErrorStrings[KCF_ERROR_MAX] = {
     [KCF_ERROR_PREMATURE_EOF]     = "Premature end of file",
 };
 
-const char *GetKcfErrorString(KCFERROR Error)
+const char *kcf_error_string(KCFERROR Error)
 {
 	if (Error < KCF_ERROR_OK || Error >= KCF_ERROR_MAX)
 		return _KcfErrorStrings[KCF_ERROR_UNKNOWN];

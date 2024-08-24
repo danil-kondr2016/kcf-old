@@ -24,17 +24,19 @@ struct KcfFileInfo {
 	bool HasUnpackedSize8 : 1;
 };
 
-KCFERROR FileInfoToRecord(struct KcfFileInfo *Info, struct KcfRecord *Record);
-KCFERROR RecordToFileInfo(struct KcfRecord *Record, struct KcfFileInfo *Info);
-bool CopyFileInfo(struct KcfFileInfo *Dest, struct KcfFileInfo *Src);
-void ClearFileInfo(struct KcfFileInfo *info);
+KCFERROR file_info_to_record(struct KcfFileInfo *Info,
+                             struct KcfRecord *Record);
+KCFERROR record_to_file_info(struct KcfRecord *Record,
+                             struct KcfFileInfo *Info);
+bool file_info_copy(struct KcfFileInfo *Dest, struct KcfFileInfo *Src);
+void file_info_clear(struct KcfFileInfo *info);
 
-KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileInfo *FileInfo);
-KCFERROR SkipFile(HKCF hKCF);
-KCFERROR ExtractFileData(HKCF hKCF, BIO *Output);
+KCFERROR KCF_get_current_file_info(KCF *kcf, struct KcfFileInfo *FileInfo);
+KCFERROR KCF_skip_file(KCF *kcf);
+KCFERROR KCF_extract(KCF *kcf, BIO *Output);
 
-KCFERROR BeginFile(HKCF hKCF, struct KcfFileInfo *FileInfo);
-KCFERROR InsertFileData(HKCF hKCF, BIO *Input);
-KCFERROR EndFile(HKCF hKCF);
+KCFERROR KCF_begin_file(KCF *kcf, struct KcfFileInfo *FileInfo);
+KCFERROR KCF_insert_file_data(KCF *kcf, BIO *Input);
+KCFERROR KCF_end_file(KCF *kcf);
 
 #endif

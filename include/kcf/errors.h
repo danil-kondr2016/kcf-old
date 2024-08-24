@@ -30,8 +30,8 @@ enum KcfFileSituation {
 	KCF_SITUATION_WRITING,
 };
 
-KCFERROR ErrnoToKcf();
-KCFERROR FileErrorToKcf(FILE *File, enum KcfFileSituation Situation);
-const char *GetKcfErrorString(KCFERROR Error);
+KCFERROR kcf_errno();
+KCFERROR kcf_file_error(FILE *File, enum KcfFileSituation Situation);
+const char *kcf_error_string(KCFERROR Error);
 
 #endif

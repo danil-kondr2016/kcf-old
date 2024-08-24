@@ -4,47 +4,47 @@
 
 #include "kcf_impl.h"
 
-static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo *FileInfo);
+static KCFERROR read_file_info(KCF *kcf, struct KcfFileInfo *FileInfo);
 
-KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileInfo *FileInfo)
+KCFERROR KCF_get_current_file_info(KCF *kcf, struct KcfFileInfo *FileInfo)
 {
-	if (!hKCF)
+	if (!kcf)
 		return KCF_ERROR_INVALID_PARAMETER;
 	if (!FileInfo)
 		return KCF_ERROR_INVALID_PARAMETER;
 
-	switch (hKCF->UnpackerState) {
+	switch (kcf->UnpackerState) {
 	case KCF_UPSTATE_FILE_HEADER:
-		return read_file_info(hKCF, FileInfo);
+		return read_file_info(kcf, FileInfo);
 	case KCF_UPSTATE_FILE_DATA:
 	case KCF_UPSTATE_AFTER_FILE_DATA:
-		return CopyFileInfo(FileInfo, &hKCF->CurrentFile);
+		return file_info_copy(FileInfo, &kcf->CurrentFile);
 	default:
 		return KCF_ERROR_INVALID_STATE;
 	}
 }
 
-KCFERROR SkipFile(HKCF hKCF)
+KCFERROR KCF_skip_file(KCF *kcf)
 {
 	struct KcfRecord Record     = {0};
 	struct KcfFileInfo FileInfo = {0};
 	KCFERROR Error              = KCF_ERROR_OK;
 
-	if (!hKCF)
+	if (!kcf)
 		return KCF_ERROR_INVALID_PARAMETER;
-	if (hKCF->IsWriting)
+	if (kcf->IsWriting)
 		return KCF_ERROR_INVALID_STATE;
 
 	do {
-		Error = ReadRecord(hKCF, &Record);
+		Error = KCF_read_record(kcf, &Record);
 		if (Error)
 			goto cleanup;
 
-		switch (hKCF->UnpackerState) {
+		switch (kcf->UnpackerState) {
 		case KCF_UPSTATE_FILE_HEADER:
-			hKCF->UnpackerState = KCF_UPSTATE_FILE_DATA;
-			if (HasAddedSize4(&Record) || HasAddedSize8(&Record))
-				SkipRecord(hKCF);
+			kcf->UnpackerState = KCF_UPSTATE_FILE_DATA;
+			if (rec_has_added_size(&Record))
+				KCF_skip_record(kcf);
 			break;
 		case KCF_UPSTATE_FILE_DATA:
 			if (Record.Header.HeadType != KCF_DATA_FRAGMENT) {
@@ -52,55 +52,56 @@ KCFERROR SkipFile(HKCF hKCF)
 				goto cleanup;
 			}
 
-			if (HasAddedSize4(&Record) || HasAddedSize8(&Record))
-				SkipRecord(hKCF);
+			if (rec_has_added_size(&Record))
+				KCF_skip_record(kcf);
 			break;
 		default:
 			return KCF_ERROR_INVALID_STATE;
 		}
 	} while (Record.Header.HeadFlags & 0x01);
 
-	hKCF->UnpackerState = KCF_UPSTATE_FILE_HEADER;
+	kcf->UnpackerState = KCF_UPSTATE_FILE_HEADER;
 cleanup:
-	ClearFileInfo(&FileInfo);
-	ClearRecord(&Record);
+	file_info_clear(&FileInfo);
+	rec_clear(&Record);
 	return Error;
 }
 
-KCFERROR ExtractFileData(HKCF hKCF, BIO *Output)
+KCFERROR KCF_extract(KCF *kcf, BIO *Output)
 {
 	KCFERROR Error = KCF_ERROR_OK;
 	uint8_t Buffer[4096];
 	size_t ToRead, BytesRead, BytesWritten, Remaining;
 	int ret;
 
-	if (!hKCF || !Output)
+	if (!kcf || !Output)
 		return KCF_ERROR_INVALID_PARAMETER;
-	if (hKCF->IsWriting || hKCF->UnpackerState != KCF_UPSTATE_FILE_HEADER)
+	if (kcf->IsWriting || kcf->UnpackerState != KCF_UPSTATE_FILE_HEADER)
 		return KCF_ERROR_INVALID_STATE;
 
-	Error = ReadRecord(hKCF, &hKCF->LastRecord);
+	Error = KCF_read_record(kcf, &kcf->LastRecord);
 	if (Error)
 		goto cleanup0;
 
-	if (hKCF->LastRecord.Header.HeadType != KCF_FILE_HEADER) {
+	if (kcf->LastRecord.Header.HeadType != KCF_FILE_HEADER) {
 		Error = KCF_ERROR_INVALID_FORMAT;
 		goto cleanup1;
 	}
 
-	Error = RecordToFileInfo(&hKCF->LastRecord, &hKCF->CurrentFile);
+	Error = record_to_file_info(&kcf->LastRecord, &kcf->CurrentFile);
 	if (Error)
 		goto cleanup1;
 
 	/* TODO compression! */
 	do {
-		Remaining = hKCF->LastRecord.Header.AddedSize;
+		Remaining = kcf->LastRecord.Header.AddedSize;
 		ToRead    = 4096;
-		while (IsAddedDataAvailable(hKCF)) {
+		while (KCF_is_data_available(kcf)) {
 			if (ToRead > Remaining)
 				ToRead = Remaining;
 
-			Error = ReadAddedData(hKCF, Buffer, ToRead, &BytesRead);
+			Error = KCF_read_added_data(kcf, Buffer, ToRead,
+			                            &BytesRead);
 			if (Error)
 				goto cleanup2;
 
@@ -112,44 +113,44 @@ KCFERROR ExtractFileData(HKCF hKCF, BIO *Output)
 			}
 		}
 
-		if (hKCF->LastRecord.Header.HeadFlags & 0x01) {
-			Error = ReadRecord(hKCF, &hKCF->LastRecord);
+		if (kcf->LastRecord.Header.HeadFlags & 0x01) {
+			Error = KCF_read_record(kcf, &kcf->LastRecord);
 			if (Error)
 				goto cleanup2;
 
-			if (hKCF->LastRecord.Header.HeadType !=
+			if (kcf->LastRecord.Header.HeadType !=
 			    KCF_DATA_FRAGMENT) {
 				Error = KCF_ERROR_INVALID_FORMAT;
 				goto cleanup2;
 			}
 		}
-	} while (hKCF->LastRecord.Header.HeadFlags & 0x01);
+	} while (kcf->LastRecord.Header.HeadFlags & 0x01);
 
 cleanup2:
-	ClearFileInfo(&hKCF->CurrentFile);
+	file_info_clear(&kcf->CurrentFile);
 cleanup1:
-	ClearRecord(&hKCF->LastRecord);
+	rec_clear(&kcf->LastRecord);
 cleanup0:
 	return Error;
 }
 
-static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo *FileInfo)
+static KCFERROR read_file_info(KCF *kcf, struct KcfFileInfo *FileInfo)
 {
 	struct KcfRecord Record = {0};
 	KCFERROR Error          = KCF_ERROR_OK;
 
-	Error = ReadRecord(hKCF, &Record);
+	Error = KCF_read_record(kcf, &Record);
 	if (Error)
 		return Error;
 
-	Error = RecordToFileInfo(&Record, FileInfo);
+	Error = record_to_file_info(&Record, FileInfo);
 	if (Error)
 		goto cleanup;
 
-	Error               = copy_file_header(&hKCF->CurrentFile, FileInfo);
-	hKCF->UnpackerState = KCF_UPSTATE_FILE_DATA;
+	Error              = file_info_copy(&kcf->CurrentFile, FileInfo);
+	kcf->UnpackerState = KCF_UPSTATE_FILE_DATA;
 
 cleanup:
-	ClearRecord(&Record);
+	rec_clear(&Record);
 	return Error;
 }

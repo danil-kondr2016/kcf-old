@@ -6,7 +6,7 @@
 
 #include "bytepack.h"
 
-KCFERROR RecordToArchiveHeader(struct KcfRecord *Record,
+KCFERROR rec_to_archive_header(struct KcfRecord *Record,
                                struct KcfArchiveHeader *Header)
 {
 	if (!Record)
@@ -14,7 +14,7 @@ KCFERROR RecordToArchiveHeader(struct KcfRecord *Record,
 	if (!Header)
 		return KCF_ERROR_INVALID_PARAMETER;
 
-	if (!ValidateRecord(Record))
+	if (!rec_validate(Record))
 		return KCF_ERROR_INVALID_DATA;
 	if (Record->Header.HeadType != KCF_ARCHIVE_HEADER)
 		return KCF_ERROR_INVALID_DATA;
@@ -26,8 +26,8 @@ KCFERROR RecordToArchiveHeader(struct KcfRecord *Record,
 	return KCF_ERROR_OK;
 }
 
-KCFERROR ArchiveHeaderToRecord(struct KcfArchiveHeader *Header,
-                               struct KcfRecord *Record)
+KCFERROR rec_from_archive_header(struct KcfArchiveHeader *Header,
+                                 struct KcfRecord *Record)
 {
 	if (!Record || !Header)
 		return KCF_ERROR_INVALID_PARAMETER;
@@ -37,12 +37,12 @@ KCFERROR ArchiveHeaderToRecord(struct KcfArchiveHeader *Header,
 	Record->DataSize         = 2;
 	Record->Header.HeadFlags = 0;
 	Record->Header.HeadType  = KCF_ARCHIVE_HEADER;
-	FixRecord(Record);
+	rec_fix(Record);
 
 	return KCF_ERROR_OK;
 }
 
-void ClearArchiveHeader(struct KcfArchiveHeader *Header)
+void ahdr_clear(struct KcfArchiveHeader *Header)
 {
 	memset(Header, 0, sizeof(*Header));
 }
