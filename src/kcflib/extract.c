@@ -1,4 +1,4 @@
-#include <kcf/files.h>
+#include <kcf/archive.h>
 
 #include <assert.h>
 

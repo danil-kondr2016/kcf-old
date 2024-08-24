@@ -3,8 +3,6 @@
 #define _KCF_IMPL_H_
 
 #include <kcf/archive.h>
-#include <kcf/errors.h>
-#include <kcf/files.h>
 
 #include <inttypes.h>
 #include <stdarg.h>

@@ -1,5 +1,4 @@
-#include <kcf/errors.h>
-#include <kcf/files.h>
+#include <kcf/archive.h>
 
 #include <stdlib.h>
 #include <string.h>

@@ -92,4 +92,9 @@ static inline bool rec_has_added_data_CRC(struct KcfRecord *record)
 bool rec_has_added_size_8(struct KcfRecord *);
 bool rec_has_added_size_4(struct KcfRecord *);
 
+KCFERROR file_info_to_record(struct KcfFileInfo *Info,
+                             struct KcfRecord *Record);
+KCFERROR record_to_file_info(struct KcfRecord *Record,
+                             struct KcfFileInfo *Info);
+
 #endif
