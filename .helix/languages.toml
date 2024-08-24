@@ -1,0 +1,9 @@
+[[language]]
+name = "c"
+file-types = ["c", "h", { glob = ".h.in" }] # TODO: ["h"]
+indent = { tab-width = 8, unit = "\t" }
+
+[[language]]
+name = "cpp"
+file-types = ["cc", "hh", "c++", "cpp", "hpp", "ipp", "tpp", "cxx", "hxx", "ixx", "txx", "ino", "C", "H", "cu", "cuh", "cppm", "h++", "ii", "inl", { glob = ".hpp.in" }]
+indent = { tab-width = 8, unit = "\t" }
