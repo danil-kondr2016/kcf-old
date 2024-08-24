@@ -1,5 +1,5 @@
-#include <io/io.h>
 #include "io_local.h"
+#include <io/io.h>
 
 #include <stdlib.h>
 
@@ -9,7 +9,7 @@ IO *IO_create(const IO_METHOD *method)
 
 	if (!method)
 		return NULL;
-	
+
 	result = calloc(1, sizeof(struct io_stream_st));
 	if (!result)
 		return NULL;
@@ -21,12 +21,12 @@ IO *IO_create(const IO_METHOD *method)
 int IO_close(IO *io)
 {
 	int ret;
-	
+
 	if (io->method->close)
 		ret = io->method->close(io);
 	else
 		ret = 0;
-		
+
 	free(io);
 	return ret;
 }
@@ -34,7 +34,7 @@ int IO_close(IO *io)
 int IO_read(IO *io, void *buffer, int64_t size, int64_t *n_read)
 {
 	int ret;
-	
+
 	if (!io)
 		return -1;
 
@@ -42,7 +42,7 @@ int IO_read(IO *io, void *buffer, int64_t size, int64_t *n_read)
 		ret = io->method->read(io, buffer, size, n_read);
 	else
 		ret = -2;
-		
+
 	return ret;
 }
 
@@ -57,7 +57,7 @@ int IO_write(IO *io, const void *buffer, int64_t size, int64_t *n_write)
 		ret = io->method->write(io, buffer, size, n_write);
 	else
 		ret = -2;
-		
+
 	return ret;
 }
 
