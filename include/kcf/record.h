@@ -12,7 +12,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "kcferr.h"
+#include "errors.h"
 
 #define KCF_HAS_ADDED_DATA_CRC32 0x20
 #define KCF_HAS_ADDED_SIZE_4     0x80

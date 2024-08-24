@@ -1,12 +1,13 @@
-#include "archive.h"
-#include "bytepack.h"
-#include "crc32c.h"
-#include "kcferr.h"
-#include "utils.h"
+#include <kcf/archive.h>
+#include <kcf/errors.h>
 
-#include "kcf_impl.h"
 #include <assert.h>
 #include <stdlib.h>
+
+#include "bytepack.h"
+#include "crc32c.h"
+#include "kcf_impl.h"
+#include "utils.h"
 
 static KCFERROR read_record_header(HKCF hKCF, struct KcfRecordHeader *RecordHdr,
                                    size_t *HeaderSize)

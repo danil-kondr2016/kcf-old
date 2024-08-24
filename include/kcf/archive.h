@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "kcferr.h"
+#include "errors.h"
 #include "record.h"
 
 typedef struct Kcf *HKCF, **PHKCF;

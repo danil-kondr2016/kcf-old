@@ -1,9 +1,10 @@
-#include "bytepack.h"
-#include "kcferr.h"
-#include "record.h"
+#include <kcf/errors.h>
+#include <kcf/record.h>
 
 #include <stdlib.h>
 #include <string.h>
+
+#include "bytepack.h"
 
 KCFERROR RecordToArchiveHeader(struct KcfRecord *Record,
                                struct KcfArchiveHeader *Header)

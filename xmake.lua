@@ -4,7 +4,7 @@ target("kcflib")
 	add_packages("openssl3")
 	add_files("src/kcflib/*.c")
 	add_headerfiles("include/(kcf/*.h)")
-	add_includedirs("include/kcf", {public = true})
+	add_includedirs("include", {public = true})
 	add_rules("utils.install.cmake_importfiles")
 	add_rules("utils.install.pkgconfig_importfiles")
 

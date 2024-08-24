@@ -1,11 +1,12 @@
-#include "archive.h"
-#include "crc32c.h"
-#include "kcferr.h"
-#include "stdio64.h"
+#include <kcf/archive.h>
+#include <kcf/errors.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "crc32c.h"
 #include "kcf_impl.h"
+#include "stdio64.h"
 
 KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record)
 {

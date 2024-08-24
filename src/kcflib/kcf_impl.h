@@ -2,10 +2,10 @@
 #ifndef _KCF_IMPL_H_
 #define _KCF_IMPL_H_
 
-#include "archive.h"
-#include "files.h"
-#include "kcferr.h"
-#include "record.h"
+#include <kcf/archive.h>
+#include <kcf/files.h>
+#include <kcf/errors.h>
+#include <kcf/record.h>
 
 #include <inttypes.h>
 #include <stdarg.h>

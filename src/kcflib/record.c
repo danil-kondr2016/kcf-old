@@ -1,11 +1,11 @@
-#include "record.h"
-#include "bytepack.h"
-#include "crc32c.h"
+#include <kcf/record.h>
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include <assert.h>
+#include "bytepack.h"
+#include "crc32c.h"
 
 void ClearRecord(struct KcfRecord *Record)
 {

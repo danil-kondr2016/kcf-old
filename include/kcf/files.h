@@ -27,6 +27,7 @@ struct KcfFileInfo {
 KCFERROR FileInfoToRecord(struct KcfFileInfo *Info, struct KcfRecord *Record);
 KCFERROR RecordToFileInfo(struct KcfRecord *Record, struct KcfFileInfo *Info);
 bool CopyFileInfo(struct KcfFileInfo *Dest, struct KcfFileInfo *Src);
+void ClearFileInfo(struct KcfFileInfo *info);
 
 KCFERROR GetCurrentFileInfo(HKCF hKCF, struct KcfFileInfo *FileInfo);
 KCFERROR SkipFile(HKCF hKCF);

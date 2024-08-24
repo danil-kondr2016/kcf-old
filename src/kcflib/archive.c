@@ -1,8 +1,8 @@
-#include "archive.h"
-#include "stdio64.h"
+#include <kcf/archive.h>
 
 #include <stdlib.h>
 
+#include "stdio64.h"
 #include "kcf_impl.h"
 
 KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)

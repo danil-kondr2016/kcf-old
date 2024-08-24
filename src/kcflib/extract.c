@@ -1,9 +1,8 @@
-#include "files.h"
+#include <kcf/files.h>
+
+#include <assert.h>
 
 #include "kcf_impl.h"
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
 
 static KCFERROR read_file_info(HKCF hKCF, struct KcfFileInfo *FileInfo);
 
@@ -56,6 +55,8 @@ KCFERROR SkipFile(HKCF hKCF)
 			if (HasAddedSize4(&Record) || HasAddedSize8(&Record))
 				SkipRecord(hKCF);
 			break;
+		default:
+			return KCF_ERROR_INVALID_STATE;
 		}
 	} while (Record.Header.HeadFlags & 0x01);
 

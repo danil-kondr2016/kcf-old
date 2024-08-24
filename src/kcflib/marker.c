@@ -1,5 +1,5 @@
-#include "archive.h"
-#include "kcferr.h"
+#include <kcf/archive.h>
+#include <kcf/errors.h>
 
 #include "kcf_impl.h"
 

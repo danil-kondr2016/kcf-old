@@ -1,4 +1,5 @@
-#include "files.h"
+#include <kcf/files.h>
+
 #include "kcf_impl.h"
 
 KCFERROR BeginFile(HKCF hKCF, struct KcfFileInfo *FileInfo)
