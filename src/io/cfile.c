@@ -15,7 +15,12 @@ static int64_t _cfile_tell(IO *io);
 static int _cfile_close(IO *io);
 
 static const IO_METHOD _cfile_method = {
-    IO_CFILE, _cfile_read, _cfile_write, _cfile_seek, _cfile_tell, _cfile_close,
+    IO_CFILE, 
+    _cfile_read, 
+    _cfile_write, 
+    _cfile_seek,
+    _cfile_tell, 
+    _cfile_close,
 };
 
 #define CHUNK_SIZE 1073741824L
@@ -91,19 +96,28 @@ static int64_t _cfile_seek(IO *io, int64_t offset, int whence)
 {
 	FILE *file;
 	int64_t ret = 0;
+	int std_whence;
 
 	assert(io);
 	assert(io->ptr);
 	file = (FILE *)io->ptr;
 
+	switch (whence) {
+	case IO_SEEK_CUR: std_whence = SEEK_CUR; break;
+	case IO_SEEK_SET: std_whence = SEEK_SET; break;
+	case IO_SEEK_END: std_whence = SEEK_END; break;
+	default:
+		return -1;
+	}
+
 	if (sizeof(long) == 4) {
 #ifdef _WIN32
-		ret = _fseeki64(file, offset, whence);
+		ret = _fseeki64(file, offset, std_whence);
 #else
-		ret = fseeko64(file, offset, whence);
+		ret = fseeko64(file, offset, std_whence);
 #endif
 	} else {
-		ret = fseek(file, offset, whence);
+		ret = fseek(file, offset, std_whence);
 	}
 
 	return ret;
