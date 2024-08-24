@@ -5,12 +5,13 @@
 #include <kcf/archive.h>
 #include <kcf/errors.h>
 #include <kcf/files.h>
-#include <kcf/record.h>
 
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
+
+#include "record.h"
 
 enum KcfWriterState {
 	KCF_WRSTATE_IDLE,

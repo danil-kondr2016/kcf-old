@@ -1,11 +1,10 @@
-#include <kcf/record.h>
-
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "bytepack.h"
 #include "crc32c.h"
+#include "record.h"
 
 void rec_clear(struct KcfRecord *Record)
 {

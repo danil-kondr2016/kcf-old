@@ -1,6 +1,5 @@
 #include <kcf/archive.h>
 #include <kcf/errors.h>
-#include <kcf/record.h>
 
 #include <assert.h>
 #include <stdlib.h>
@@ -8,6 +7,7 @@
 #include "bytepack.h"
 #include "crc32c.h"
 #include "kcf_impl.h"
+#include "record.h"
 #include "utils.h"
 
 static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,

@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "errors.h"
+#include <kcf/errors.h>
 
 #define KCF_HAS_ADDED_DATA_CRC32 0x20
 #define KCF_HAS_ADDED_SIZE_4     0x80

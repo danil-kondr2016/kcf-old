@@ -1,11 +1,11 @@
 #include <kcf/errors.h>
 #include <kcf/files.h>
-#include <kcf/record.h>
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "bytepack.h"
+#include "record.h"
 
 #define KCF_FILE_HAS_TIMESTAMP  0x01
 #define KCF_FILE_HAS_FILE_CRC32 0x02
