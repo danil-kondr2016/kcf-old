@@ -47,7 +47,7 @@ KCFERROR KCF_skip_file(KCF *kcf)
 				KCF_skip_record(kcf);
 			break;
 		case KCF_UPSTATE_FILE_DATA:
-			if (Record.Header.HeadType != KCF_DATA_FRAGMENT) {
+			if (Record.HeadType != KCF_DATA_FRAGMENT) {
 				Error = KCF_ERROR_INVALID_DATA;
 				goto cleanup;
 			}
@@ -58,7 +58,7 @@ KCFERROR KCF_skip_file(KCF *kcf)
 		default:
 			return KCF_ERROR_INVALID_STATE;
 		}
-	} while (Record.Header.HeadFlags & 0x01);
+	} while (Record.HeadFlags & 0x01);
 
 	kcf->UnpackerState = KCF_UPSTATE_FILE_HEADER;
 cleanup:
@@ -83,7 +83,7 @@ KCFERROR KCF_extract(KCF *kcf, BIO *Output)
 	if (Error)
 		goto cleanup0;
 
-	if (kcf->LastRecord.Header.HeadType != KCF_FILE_HEADER) {
+	if (kcf->LastRecord.HeadType != KCF_FILE_HEADER) {
 		Error = KCF_ERROR_INVALID_FORMAT;
 		goto cleanup1;
 	}
@@ -94,7 +94,7 @@ KCFERROR KCF_extract(KCF *kcf, BIO *Output)
 
 	/* TODO compression! */
 	do {
-		Remaining = kcf->LastRecord.Header.AddedSize;
+		Remaining = kcf->LastRecord.AddedSize;
 		ToRead    = 4096;
 		while (KCF_is_data_available(kcf)) {
 			if (ToRead > Remaining)
@@ -113,18 +113,18 @@ KCFERROR KCF_extract(KCF *kcf, BIO *Output)
 			}
 		}
 
-		if (kcf->LastRecord.Header.HeadFlags & 0x01) {
+		if (kcf->LastRecord.HeadFlags & 0x01) {
 			Error = KCF_read_record(kcf, &kcf->LastRecord);
 			if (Error)
 				goto cleanup2;
 
-			if (kcf->LastRecord.Header.HeadType !=
+			if (kcf->LastRecord.HeadType !=
 			    KCF_DATA_FRAGMENT) {
 				Error = KCF_ERROR_INVALID_FORMAT;
 				goto cleanup2;
 			}
 		}
-	} while (kcf->LastRecord.Header.HeadFlags & 0x01);
+	} while (kcf->LastRecord.HeadFlags & 0x01);
 
 cleanup2:
 	file_info_clear(&kcf->CurrentFile);

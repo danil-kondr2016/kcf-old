@@ -28,23 +28,23 @@ KCFERROR KCF_write_record(KCF *kcf, struct KcfRecord *Record)
 
 	/* Ensure that record CRC32 is valid */
 	rec_fix(Record);
-	buffer = malloc(Record->Header.HeadSize);
+	buffer = malloc(Record->HeadSize);
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
 	kcf->RecordOffset = kcf_ftell(kcf->File);
-	rec_to_buffer(Record, buffer, Record->Header.HeadSize);
-	if (!fwrite(buffer, Record->Header.HeadSize, 1, kcf->File))
+	rec_to_buffer(Record, buffer, Record->HeadSize);
+	if (!fwrite(buffer, Record->HeadSize, 1, kcf->File))
 		return trace_kcf_error(
 		    kcf_file_error(kcf->File, KCF_SITUATION_WRITING));
 
 	/* Save all information for backpatching */
-	kcf->HasAddedSize = !!(Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_4);
+	kcf->HasAddedSize = !!(Record->HeadFlags & KCF_HAS_ADDED_SIZE_4);
 	kcf->HasAddedDataCRC32 =
-	    !!(Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
+	    !!(Record->HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
 	if (kcf->HasAddedSize) {
 		rec_copy(&kcf->LastRecord, Record);
-		kcf->AddedDataToBeWritten = kcf->LastRecord.Header.AddedSize;
+		kcf->AddedDataToBeWritten = kcf->LastRecord.AddedSize;
 		kcf->WriterState          = KCF_WRSTATE_ADDED_DATA;
 	}
 
@@ -76,30 +76,30 @@ KCFERROR KCF_write_record_with_added_data(KCF *kcf, struct KcfRecord *Record,
 	/* Ensure that record CRC32 is valid */
 	if (AddedData && Size) {
 		if (rec_has_added_data_CRC(Record)) {
-			Record->Header.AddedDataCRC32 =
+			Record->AddedDataCRC32 =
 			    crc32c(0, AddedData, Size);
 		}
 
 		if (Size > 2147483647) {
-			Record->Header.HeadFlags |= KCF_HAS_ADDED_SIZE_8;
+			Record->HeadFlags |= KCF_HAS_ADDED_SIZE_8;
 		} else {
-			Record->Header.HeadFlags |= KCF_HAS_ADDED_SIZE_4;
+			Record->HeadFlags |= KCF_HAS_ADDED_SIZE_4;
 		}
-		Record->Header.AddedSize = Size;
+		Record->AddedSize = Size;
 	} else {
-		Record->Header.HeadFlags &= ~KCF_HAS_ADDED_DATA_CRC32;
-		Record->Header.HeadFlags &= ~KCF_HAS_ADDED_SIZE_8;
-		Record->Header.AddedSize      = 0;
-		Record->Header.AddedDataCRC32 = 0;
+		Record->HeadFlags &= ~KCF_HAS_ADDED_DATA_CRC32;
+		Record->HeadFlags &= ~KCF_HAS_ADDED_SIZE_8;
+		Record->AddedSize      = 0;
+		Record->AddedDataCRC32 = 0;
 	}
 
 	rec_fix(Record);
-	buffer = malloc(Record->Header.HeadSize);
+	buffer = malloc(Record->HeadSize);
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
-	rec_to_buffer(Record, buffer, Record->Header.HeadSize);
-	if (!fwrite(buffer, Record->Header.HeadSize, 1, kcf->File))
+	rec_to_buffer(Record, buffer, Record->HeadSize);
+	if (!fwrite(buffer, Record->HeadSize, 1, kcf->File))
 		return trace_kcf_error(
 		    kcf_file_error(kcf->File, KCF_SITUATION_WRITING));
 	if (!fwrite(AddedData, Size, 1, kcf->File))
@@ -166,16 +166,16 @@ KCFERROR KCF_finish_added_data(KCF *kcf)
 	if (kcf_fseek(kcf->File, kcf->RecordOffset, SEEK_SET) == -1)
 		return trace_kcf_error(KCF_ERROR_WRITE);
 
-	kcf->LastRecord.Header.AddedSize      = kcf->WrittenAddedData;
-	kcf->LastRecord.Header.AddedDataCRC32 = kcf->AddedDataCRC32;
+	kcf->LastRecord.AddedSize      = kcf->WrittenAddedData;
+	kcf->LastRecord.AddedDataCRC32 = kcf->AddedDataCRC32;
 	rec_fix(&kcf->LastRecord);
-	buffer = malloc(kcf->LastRecord.Header.HeadSize);
+	buffer = malloc(kcf->LastRecord.HeadSize);
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 	rec_to_buffer(&kcf->LastRecord, buffer,
-	              kcf->LastRecord.Header.HeadSize);
+	              kcf->LastRecord.HeadSize);
 
-	if (!fwrite(buffer, kcf->LastRecord.Header.HeadSize, 1, kcf->File))
+	if (!fwrite(buffer, kcf->LastRecord.HeadSize, 1, kcf->File))
 		return trace_kcf_error(
 		    kcf_file_error(kcf->File, KCF_SITUATION_WRITING));
 	kcf_fseek(kcf->File, kcf->RecordEndOffset, SEEK_SET);

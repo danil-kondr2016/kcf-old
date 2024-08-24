@@ -16,9 +16,9 @@ KCFERROR rec_to_archive_header(struct KcfRecord *Record,
 
 	if (!rec_validate(Record))
 		return KCF_ERROR_INVALID_DATA;
-	if (Record->Header.HeadType != KCF_ARCHIVE_HEADER)
+	if (Record->HeadType != KCF_ARCHIVE_HEADER)
 		return KCF_ERROR_INVALID_DATA;
-	if (Record->Header.HeadSize < 8)
+	if (Record->HeadSize < 8)
 		return KCF_ERROR_INVALID_DATA;
 
 	ReadU16LE(Record->Data, Record->DataSize, NULL,
@@ -35,8 +35,8 @@ KCFERROR rec_from_archive_header(struct KcfArchiveHeader *Header,
 	Record->Data = malloc(2);
 	WriteU16LE(Record->Data, 2, NULL, Header->ArchiveVersion);
 	Record->DataSize         = 2;
-	Record->Header.HeadFlags = 0;
-	Record->Header.HeadType  = KCF_ARCHIVE_HEADER;
+	Record->HeadFlags = 0;
+	Record->HeadType  = KCF_ARCHIVE_HEADER;
 	rec_fix(Record);
 
 	return KCF_ERROR_OK;

@@ -64,7 +64,7 @@ file_info_to_record(struct KcfFileInfo *Info, struct KcfRecord *Record)
 
 	if (!rec_validate(Record))
 		return KCF_ERROR_INVALID_DATA;
-	if (Record->Header.HeadType != KCF_FILE_HEADER)
+	if (Record->HeadType != KCF_FILE_HEADER)
 		return KCF_ERROR_INVALID_DATA;
 
 	pbuf = Record->Data;
@@ -120,7 +120,7 @@ record_to_file_info(struct KcfRecord *Record, struct KcfFileInfo *Info)
 	if (!Record || !Info)
 		return KCF_ERROR_INVALID_PARAMETER;
 
-	Record->Header.HeadType = KCF_FILE_HEADER;
+	Record->HeadType = KCF_FILE_HEADER;
 	size                    = get_file_info_data_size(Info);
 	Record->Data            = malloc(size);
 	if (!Record->Data)

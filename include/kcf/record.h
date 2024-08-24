@@ -24,7 +24,7 @@ enum KcfRecordType {
 	KCF_DATA_FRAGMENT  = 'D',
 };
 
-struct KcfRecordHeader {
+struct KcfRecord {
 	uint16_t HeadCRC;
 	uint8_t HeadType;
 	uint8_t HeadFlags;
@@ -45,10 +45,7 @@ struct KcfRecordHeader {
 		uint64_t AddedSize;
 	};
 	uint32_t AddedDataCRC32;
-};
-
-struct KcfRecord {
-	struct KcfRecordHeader Header;
+	
 	uint8_t *Data;
 	size_t DataSize;
 };
@@ -78,7 +75,7 @@ static inline bool rec_has_added_size(struct KcfRecord *record)
 	if (!record)
 		return false;
 
-	if (record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_4)
+	if (record->HeadFlags & KCF_HAS_ADDED_SIZE_4)
 		return true;
 
 	return false;
@@ -89,7 +86,7 @@ static inline bool rec_has_added_data_CRC(struct KcfRecord *record)
 	if (!record)
 		return false;
 
-	return !!(record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
+	return !!(record->HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
 }
 
 bool rec_has_added_size_8(struct KcfRecord *);
