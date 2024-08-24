@@ -3,7 +3,7 @@
 #include <assert.h>
 
 static inline bool _read_u8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
-			    uint8_t *Out)
+                            uint8_t *Out)
 {
 	uint8_t result;
 
@@ -16,7 +16,7 @@ static inline bool _read_u8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
 }
 
 static inline bool _read_u16(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
-			     uint16_t *Out)
+                             uint16_t *Out)
 {
 	uint8_t low, high;
 	bool low_read, high_read;
@@ -29,7 +29,7 @@ static inline bool _read_u16(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
 }
 
 static inline bool _read_u32(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
-			     uint32_t *Out)
+                             uint32_t *Out)
 {
 	uint16_t low, high;
 	bool low_read, high_read;
@@ -42,7 +42,7 @@ static inline bool _read_u32(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
 }
 
 static inline bool _read_u64(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
-			     uint64_t *Out)
+                             uint64_t *Out)
 {
 	uint32_t low, high;
 	bool low_read, high_read;
@@ -103,7 +103,7 @@ bool ReadU8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint8_t *Out)
 }
 
 static inline bool _write_u8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
-			     uint8_t In)
+                             uint8_t In)
 {
 	if (*Offset >= Size)
 		return false;
@@ -113,21 +113,21 @@ static inline bool _write_u8(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
 }
 
 static inline bool _write_u16(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
-			      uint16_t In)
+                              uint16_t In)
 {
 	return _write_u8(Buffer, Size, Offset, In & 0xFF) &&
 	       _write_u8(Buffer, Size, Offset, (In >> 8) & 0xFF);
 }
 
 static inline bool _write_u32(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
-			      uint32_t In)
+                              uint32_t In)
 {
 	return _write_u16(Buffer, Size, Offset, In & 0xFFFF) &&
 	       _write_u16(Buffer, Size, Offset, (In >> 16) & 0xFFFF);
 }
 
 static inline bool _write_u64(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset,
-			      uint64_t In)
+                              uint64_t In)
 {
 	return _write_u32(Buffer, Size, Offset, In & 0xFFFFFFFFL) &&
 	       _write_u32(Buffer, Size, Offset, (In >> 32) & 0xFFFFFFFFL);

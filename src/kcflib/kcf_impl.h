@@ -61,8 +61,8 @@ struct Kcf {
 	struct {
 		bool HasAddedDataCRC32 : 1;
 		bool HasAddedSize      : 1;
-		bool IsWriting	       : 1;
-		bool IsWritable	       : 1;
+		bool IsWriting         : 1;
+		bool IsWritable        : 1;
 		bool IsUnpacking       : 1;
 	};
 	union {
@@ -83,14 +83,14 @@ static inline void trace_kcf_state(HKCF hKCF)
 {
 	fputs("##KCFDEBUG## ", stderr);
 	fprintf(stderr,
-		"%p %" PRId64 " %" PRId64 " %08" PRIx32 " %08" PRIx32
-		" %" PRId64 " %" PRId64 " %c%c%c %d",
-		hKCF, hKCF->AvailableAddedData, hKCF->AddedDataAlreadyRead,
-		hKCF->AddedDataCRC32, hKCF->ActualAddedDataCRC32,
-		hKCF->RecordOffset, hKCF->RecordEndOffset,
-		hKCF->HasAddedDataCRC32 ? 'C' : '-',
-		hKCF->HasAddedSize ? 'A' : '-', hKCF->IsWriting ? 'W' : 'R',
-		hKCF->ReaderState);
+	        "%p %" PRId64 " %" PRId64 " %08" PRIx32 " %08" PRIx32
+	        " %" PRId64 " %" PRId64 " %c%c%c %d",
+	        hKCF, hKCF->AvailableAddedData, hKCF->AddedDataAlreadyRead,
+	        hKCF->AddedDataCRC32, hKCF->ActualAddedDataCRC32,
+	        hKCF->RecordOffset, hKCF->RecordEndOffset,
+	        hKCF->HasAddedDataCRC32 ? 'C' : '-',
+	        hKCF->HasAddedSize ? 'A' : '-', hKCF->IsWriting ? 'W' : 'R',
+	        hKCF->ReaderState);
 	fputc('\n', stderr);
 }
 
@@ -124,16 +124,16 @@ static inline void trace_kcf_dump_buffer(uint8_t *buf, size_t size)
 static inline KCFERROR trace_kcf_error(KCFERROR Error)
 {
 	fprintf(stderr, "##KCFDEBUG## Error #%d (%s)\n", Error,
-		GetKcfErrorString(Error));
+	        GetKcfErrorString(Error));
 	return Error;
 }
 
 static inline void trace_kcf_record(struct KcfRecord *Record)
 {
 	trace_kcf_msg("REC %04X %02X %02X %5u %20llu %08X",
-		      Record->Header.HeadCRC, Record->Header.HeadType,
-		      Record->Header.HeadFlags, Record->Header.HeadSize,
-		      Record->Header.AddedSize, Record->Header.AddedDataCRC32);
+	              Record->Header.HeadCRC, Record->Header.HeadType,
+	              Record->Header.HeadFlags, Record->Header.HeadSize,
+	              Record->Header.AddedSize, Record->Header.AddedDataCRC32);
 	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
 }
 #else

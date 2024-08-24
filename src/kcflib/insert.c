@@ -46,7 +46,7 @@ KCFERROR InsertFileData(HKCF hKCF, BIO *Input)
 	/* TODO compression */
 	do {
 		ret = BIO_read_ex(Input, Buffer, INSERT_FILE_BUFFER_SIZE,
-				  &BytesRead);
+		                  &BytesRead);
 		if (!ret)
 			return KCF_ERROR_WRITE;
 

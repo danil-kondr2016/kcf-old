@@ -9,7 +9,7 @@
 #include <stdlib.h>
 
 static KCFERROR read_record_header(HKCF hKCF, struct KcfRecordHeader *RecordHdr,
-				   size_t *HeaderSize)
+                                   size_t *HeaderSize)
 {
 	uint8_t buffer[18] = {0};
 	ptrdiff_t hdr_size = 0;
@@ -35,8 +35,8 @@ static KCFERROR read_record_header(HKCF hKCF, struct KcfRecordHeader *RecordHdr,
 	ReadU16LE(buffer, 6, &hdr_size, &RecordHdr->HeadSize);
 
 	trace_kcf_msg("read_record_header %04X %02X %02X %04X",
-		      RecordHdr->HeadCRC, RecordHdr->HeadType,
-		      RecordHdr->HeadFlags, RecordHdr->HeadSize);
+	              RecordHdr->HeadCRC, RecordHdr->HeadType,
+	              RecordHdr->HeadFlags, RecordHdr->HeadSize);
 
 	RecordHdr->AddedSize = 0;
 
@@ -44,7 +44,7 @@ static KCFERROR read_record_header(HKCF hKCF, struct KcfRecordHeader *RecordHdr,
 		n_read = fread(buffer + hdr_size, 1, 4, hKCF->File);
 		if (n_read < 4)
 			return FileErrorToKcf(hKCF->File,
-					      KCF_SITUATION_READING_IN_MIDDLE);
+			                      KCF_SITUATION_READING_IN_MIDDLE);
 	}
 
 	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8) ==
@@ -52,10 +52,10 @@ static KCFERROR read_record_header(HKCF hKCF, struct KcfRecordHeader *RecordHdr,
 		n_read = fread(buffer + hdr_size, 1, 4, hKCF->File);
 		if (n_read < 4)
 			return FileErrorToKcf(hKCF->File,
-					      KCF_SITUATION_READING_IN_MIDDLE);
+			                      KCF_SITUATION_READING_IN_MIDDLE);
 		ReadU64LE(buffer, 14, &hdr_size, &RecordHdr->AddedSize);
 	} else if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8) ==
-		   KCF_HAS_ADDED_SIZE_4) {
+	           KCF_HAS_ADDED_SIZE_4) {
 		ReadU32LE(buffer, 14, &hdr_size, &RecordHdr->AddedSizeLow);
 	}
 
@@ -63,16 +63,16 @@ static KCFERROR read_record_header(HKCF hKCF, struct KcfRecordHeader *RecordHdr,
 		n_read = fread(buffer + hdr_size, 1, 4, hKCF->File);
 		if (n_read < 4)
 			return FileErrorToKcf(hKCF->File,
-					      KCF_SITUATION_READING_IN_MIDDLE);
+			                      KCF_SITUATION_READING_IN_MIDDLE);
 		ReadU32LE(buffer, 18, &hdr_size, &RecordHdr->AddedDataCRC32);
 		hKCF->AddedDataCRC32 = RecordHdr->AddedDataCRC32;
 	} else {
-		hKCF->AddedDataCRC32	  = 0;
+		hKCF->AddedDataCRC32      = 0;
 		RecordHdr->AddedDataCRC32 = 0;
 	}
 
 	trace_kcf_msg("read_record_header %016llX %08X", RecordHdr->AddedSize,
-		      RecordHdr->AddedDataCRC32);
+	              RecordHdr->AddedDataCRC32);
 
 	if (HeaderSize)
 		*HeaderSize = hdr_size;
@@ -101,7 +101,7 @@ KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
 
 	hKCF->AddedDataAlreadyRead = 0;
 	hKCF->AvailableAddedData   = 0;
-	hKCF->AddedDataCRC32	   = 0;
+	hKCF->AddedDataCRC32       = 0;
 	hKCF->ActualAddedDataCRC32 = 0;
 	Error = read_record_header(hKCF, &Record->Header, &HeaderSize);
 	if (Error)
@@ -175,7 +175,7 @@ bool IsAddedDataAvailable(HKCF hKCF)
 }
 
 KCFERROR ReadAddedData(HKCF hKCF, void *Destination, size_t BufferSize,
-		       size_t *BytesRead)
+                       size_t *BytesRead)
 {
 	size_t n_read;
 

@@ -15,13 +15,13 @@
 #include "kcferr.h"
 
 #define KCF_HAS_ADDED_DATA_CRC32 0x20
-#define KCF_HAS_ADDED_SIZE_4	 0x80
-#define KCF_HAS_ADDED_SIZE_8	 0xC0
+#define KCF_HAS_ADDED_SIZE_4     0x80
+#define KCF_HAS_ADDED_SIZE_8     0xC0
 
 enum KcfRecordType {
-	KCF_MARKER	   = '!',
+	KCF_MARKER         = '!',
 	KCF_ARCHIVE_HEADER = 'A',
-	KCF_FILE_HEADER	   = 'F',
+	KCF_FILE_HEADER    = 'F',
 	KCF_DATA_FRAGMENT  = 'D',
 };
 

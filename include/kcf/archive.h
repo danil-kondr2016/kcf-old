@@ -11,7 +11,7 @@
 
 typedef struct Kcf *HKCF, **PHKCF;
 
-#define KCF_MODE_READ	0x01
+#define KCF_MODE_READ   0x01
 #define KCF_MODE_CREATE 0x02
 #define KCF_MODE_MODIFY 0x03
 
@@ -55,7 +55,7 @@ KCFERROR SkipRecord(HKCF hKCF);
 
 bool IsAddedDataAvailable(HKCF hKCF);
 KCFERROR ReadAddedData(HKCF hKCF, void *Destination, size_t BufferSize,
-		       size_t *BytesRead);
+                       size_t *BytesRead);
 
 /* Write functions */
 
@@ -89,7 +89,7 @@ KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record);
  * is set, CRC32 of added data will be written into the record.
  */
 KCFERROR WriteRecordWithAddedData(HKCF hKCF, struct KcfRecord *Record,
-				  uint8_t *AddedData, size_t Size);
+                                  uint8_t *AddedData, size_t Size);
 
 /**
  * \brief Writes added data into the archive. Should be called after

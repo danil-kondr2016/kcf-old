@@ -7,7 +7,7 @@
 
 KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
 {
-	HKCF Result	 = NULL;
+	HKCF Result      = NULL;
 	char *ModeString = NULL;
 	int KcfModeValue = 0;
 
@@ -68,7 +68,7 @@ bool StartReadingFromArchive(HKCF hKCF)
 		FinishAddedData(hKCF);
 	fflush(hKCF->File);
 
-	hKCF->IsWriting	  = false;
+	hKCF->IsWriting   = false;
 	hKCF->ReaderState = KCF_RDSTATE_IDLE;
 	return true;
 }
@@ -78,7 +78,7 @@ bool StartWritingToArchive(HKCF hKCF)
 	if (!hKCF->IsWritable)
 		return false;
 
-	hKCF->IsWriting	  = true;
+	hKCF->IsWriting   = true;
 	hKCF->WriterState = KCF_WRSTATE_IDLE;
 	return true;
 }

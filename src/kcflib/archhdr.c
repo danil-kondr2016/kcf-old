@@ -6,7 +6,7 @@
 #include <string.h>
 
 KCFERROR RecordToArchiveHeader(struct KcfRecord *Record,
-			       struct KcfArchiveHeader *Header)
+                               struct KcfArchiveHeader *Header)
 {
 	if (!Record)
 		return KCF_ERROR_INVALID_PARAMETER;
@@ -21,21 +21,21 @@ KCFERROR RecordToArchiveHeader(struct KcfRecord *Record,
 		return KCF_ERROR_INVALID_DATA;
 
 	ReadU16LE(Record->Data, Record->DataSize, NULL,
-		  &Header->ArchiveVersion);
+	          &Header->ArchiveVersion);
 	return KCF_ERROR_OK;
 }
 
 KCFERROR ArchiveHeaderToRecord(struct KcfArchiveHeader *Header,
-			       struct KcfRecord *Record)
+                               struct KcfRecord *Record)
 {
 	if (!Record || !Header)
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	Record->Data = malloc(2);
 	WriteU16LE(Record->Data, 2, NULL, Header->ArchiveVersion);
-	Record->DataSize	 = 2;
+	Record->DataSize         = 2;
 	Record->Header.HeadFlags = 0;
-	Record->Header.HeadType	 = KCF_ARCHIVE_HEADER;
+	Record->Header.HeadType  = KCF_ARCHIVE_HEADER;
 	FixRecord(Record);
 
 	return KCF_ERROR_OK;

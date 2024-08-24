@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define KCF_FILE_HAS_TIMESTAMP	0x01
+#define KCF_FILE_HAS_TIMESTAMP  0x01
 #define KCF_FILE_HAS_FILE_CRC32 0x02
 #define KCF_FILE_HAS_UNPACKED_4 0x04
 #define KCF_FILE_HAS_UNPACKED_8 0x0C
@@ -120,8 +120,8 @@ RecordToFileInfo(struct KcfRecord *Record, struct KcfFileInfo *Info)
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	Record->Header.HeadType = KCF_FILE_HEADER;
-	size			= get_file_info_data_size(Info);
-	Record->Data		= malloc(size);
+	size                    = get_file_info_data_size(Info);
+	Record->Data            = malloc(size);
 	if (!Record->Data)
 		return KCF_ERROR_OUT_OF_MEMORY;
 	Record->DataSize = size;
@@ -168,21 +168,21 @@ bool CopyFileInfo(struct KcfFileInfo *Dest, struct KcfFileInfo *Src)
 	if (!Dest || !Src)
 		return false;
 
-	Dest->TimeStamp	   = Src->TimeStamp;
+	Dest->TimeStamp    = Src->TimeStamp;
 	Dest->UnpackedSize = Src->UnpackedSize;
 
 	if (Src->FileName) {
 		int file_name_size = strlen(Src->FileName);
-		Dest->FileName	   = malloc(file_name_size + 1);
+		Dest->FileName     = malloc(file_name_size + 1);
 		if (!Dest->FileName)
 			return false;
 		memcpy(Dest->FileName, Src->FileName, file_name_size);
 		Dest->FileName[file_name_size] = 0;
 	}
 
-	Dest->FileCRC32	       = Src->FileCRC32;
+	Dest->FileCRC32        = Src->FileCRC32;
 	Dest->CompressionInfo  = Src->CompressionInfo;
-	Dest->FileType	       = Src->FileType;
+	Dest->FileType         = Src->FileType;
 	Dest->HasTimeStamp     = Src->HasTimeStamp;
 	Dest->HasFileCRC32     = Src->HasFileCRC32;
 	Dest->HasUnpackedSize  = Src->HasUnpackedSize;
