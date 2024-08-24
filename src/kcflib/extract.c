@@ -96,7 +96,7 @@ KCFERROR KCF_extract(KCF *kcf, BIO *Output)
 	do {
 		Remaining = kcf->LastRecord.AddedSize;
 		ToRead    = 4096;
-		while (KCF_is_data_available(kcf)) {
+		while (KCF_is_added_data_available(kcf)) {
 			if (ToRead > Remaining)
 				ToRead = Remaining;
 

@@ -7,6 +7,7 @@
 #include "bytepack.h"
 #include "crc32c.h"
 #include "kcf_impl.h"
+#include "read.h"
 #include "record.h"
 #include "utils.h"
 

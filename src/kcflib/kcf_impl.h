@@ -11,7 +11,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "read.h"
 #include "record.h"
+#include "write.h"
 
 enum KcfWriterState {
 	KCF_WRSTATE_IDLE,
@@ -43,6 +45,11 @@ enum KcfPackerState {
 };
 
 struct kcf_st {
+	int64_t (*read)(uintptr_t file, void *buffer, int64_t size);
+	int64_t (*write)(uintptr_t file, const void *buffer, int64_t size);
+	int64_t (*seek)(uintptr_t file, int64_t offset, int whence);
+	int64_t (*tell)(uintptr_t file);
+
 	union {
 		uint64_t AvailableAddedData;
 		uint64_t AddedDataToBeWritten;
