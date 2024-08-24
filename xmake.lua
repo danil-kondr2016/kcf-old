@@ -1,4 +1,11 @@
+-- TODO replace with my IO
 add_requires('openssl3')
+
+target("io")
+	set_kind("static")
+	add_files("src/io/*.c")
+	add_headerfiles("include/(io/*.h)")
+
 target("kcflib")
 	set_kind("static")
 	add_packages("openssl3")
