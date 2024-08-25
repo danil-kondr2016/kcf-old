@@ -23,9 +23,8 @@ struct io_stream_st {
 struct io_method_st {
 	uintptr_t type;
 
-	int (*read)(IO *io, void *buffer, int64_t size, int64_t *n_read);
-	int (*write)(IO *io, const void *buffer, int64_t size,
-	             int64_t *n_written);
+	int64_t (*read)(IO *io, void *buffer, int64_t size);
+	int64_t (*write)(IO *io, const void *buffer, int64_t size);
 	int64_t (*seek)(IO *io, int64_t offset, int whence);
 	int64_t (*tell)(IO *io);
 	int (*close)(IO *io);

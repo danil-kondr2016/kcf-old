@@ -7,9 +7,8 @@
 #include <limits.h>
 #include <stdio.h>
 
-static int _cfile_read(IO *io, void *buffer, int64_t size, int64_t *n_read);
-static int _cfile_write(IO *io, const void *buffer, int64_t size,
-                        int64_t *n_write);
+static int64_t _cfile_read(IO *io, void *buffer, int64_t size);
+static int64_t _cfile_write(IO *io, const void *buffer, int64_t size);
 static int64_t _cfile_seek(IO *io, int64_t offset, int whence);
 static int64_t _cfile_tell(IO *io);
 static int _cfile_close(IO *io);
@@ -25,7 +24,7 @@ static const IO_METHOD _cfile_method = {
 
 #define CHUNK_SIZE 1073741824L
 
-static int _cfile_read(IO *io, void *buffer, int64_t size, int64_t *n_read)
+static int64_t _cfile_read(IO *io, void *buffer, int64_t size)
 {
 	FILE *file;
 	size_t to_read;
@@ -53,13 +52,10 @@ static int _cfile_read(IO *io, void *buffer, int64_t size, int64_t *n_read)
 		read_length = fread(buffer, 1, to_read, file);
 	}
 
-	if (n_read)
-		*n_read = read_length;
-	return 0;
+	return read_length;
 }
 
-static int _cfile_write(IO *io, const void *buffer, int64_t size,
-                        int64_t *n_write)
+static int64_t _cfile_write(IO *io, const void *buffer, int64_t size)
 {
 	FILE *file;
 	size_t to_write;
@@ -87,9 +83,7 @@ static int _cfile_write(IO *io, const void *buffer, int64_t size,
 		write_length = fwrite(buffer, 1, to_write, file);
 	}
 
-	if (n_write)
-		*n_write = write_length;
-	return 0;
+	return write_length;
 }
 
 #ifdef _WIN32

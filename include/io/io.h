@@ -22,8 +22,8 @@ enum { IO_SEEK_SET, IO_SEEK_CUR, IO_SEEK_END };
 IO *IO_create(const IO_METHOD *method);
 int IO_close(IO *io);
 
-int IO_read(IO *io, void *buffer, int64_t size, int64_t *n_read);
-int IO_write(IO *io, const void *buffer, int64_t size, int64_t *n_write);
+int64_t IO_read(IO *io, void *buffer, int64_t size);
+int64_t IO_write(IO *io, const void *buffer, int64_t size);
 int64_t IO_seek(IO *io, int64_t offset, int whence);
 int64_t IO_tell(IO *io);
 

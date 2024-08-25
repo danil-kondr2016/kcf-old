@@ -12,8 +12,8 @@
 #include <assert.h>
 #include <fcntl.h>
 
-static int _fd_read(IO *io, void *buffer, int64_t size, int64_t *n_read);
-static int _fd_write(IO *io, const void *buffer, int64_t size, int64_t *n_write);
+static int64_t _fd_read(IO *io, void *buffer, int64_t size);
+static int64_t _fd_write(IO *io, const void *buffer, int64_t size);
 static int64_t _fd_seek(IO *io, int64_t offset, int whence);
 static int64_t _fd_tell(IO *io);
 static int _fd_close(IO *io);
@@ -41,7 +41,7 @@ static const IO_METHOD _fd_method = {
 #define _fd_read_chunked(x) ((sizeof(size_t) == 4) && ((x) > INT32_MAX))
 #endif
 
-static int _fd_read(IO *io, void *buffer, int64_t size, int64_t *n_read)
+static int64_t _fd_read(IO *io, void *buffer, int64_t size)
 {
 	_fd_read_ret ret;
 	_fd_read_count to_read;
@@ -55,23 +55,20 @@ static int _fd_read(IO *io, void *buffer, int64_t size, int64_t *n_read)
 				to_read = size;
 
 			ret = _fd_read_fn(io->handle, buffer, to_read);
-			if (ret < 0)
+			if (ret < 0) {
+				read_length = ret;
 				break;
+			}
 		
 			size -= ret;
 			read_length += ret;
 		} while (size > 0);
 	} else {
 		ret = _fd_read_fn(io->handle, buffer, size);
-		if (ret >= 0)
-			read_length = ret;
-		else
-			read_length = 0;
+		read_length = ret;
 	}
 	
-	if (n_read)
-		*n_read = read_length;
-	return ret >= 0 ? 0 : -1;
+	return read_length;
 }
 
 #undef _fd_read_ret
@@ -91,7 +88,7 @@ static int _fd_read(IO *io, void *buffer, int64_t size, int64_t *n_read)
 #define _fd_write_chunked(x) ((sizeof(size_t) == 4) && ((x) > INT32_MAX))
 #endif
 
-static int _fd_write(IO *io, const void *buffer, int64_t size, int64_t *n_write)
+static int64_t _fd_write(IO *io, const void *buffer, int64_t size)
 {
 	_fd_write_ret ret;
 	_fd_write_count to_write;
@@ -105,23 +102,20 @@ static int _fd_write(IO *io, const void *buffer, int64_t size, int64_t *n_write)
 				to_write = size;
 
 			ret = _fd_write_fn(io->handle, buffer, to_write);
-			if (ret < 0)
+			if (ret < 0) {
+				write_length = ret;
 				break;
+			}
 		
 			size -= ret;
 			write_length += ret;
 		} while (size > 0);
 	} else {
 		ret = _fd_write_fn(io->handle, buffer, size);
-		if (ret >= 0)
-			write_length = ret;
-		else
-			write_length = 0;
+		write_length = ret;
 	}
 	
-	if (n_write)
-		*n_write = write_length;
-	return ret >= 0 ? 0 : -1;
+	return write_length;
 }
 
 #ifdef _WIN32

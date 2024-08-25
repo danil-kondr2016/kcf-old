@@ -31,30 +31,30 @@ int IO_close(IO *io)
 	return ret;
 }
 
-int IO_read(IO *io, void *buffer, int64_t size, int64_t *n_read)
+int64_t IO_read(IO *io, void *buffer, int64_t size)
 {
-	int ret;
+	int64_t ret;
 
 	if (!io)
 		return -1;
 
 	if (io->method->read)
-		ret = io->method->read(io, buffer, size, n_read);
+		ret = io->method->read(io, buffer, size);
 	else
 		ret = -2;
 
 	return ret;
 }
 
-int IO_write(IO *io, const void *buffer, int64_t size, int64_t *n_write)
+int64_t IO_write(IO *io, const void *buffer, int64_t size)
 {
-	int ret;
+	int64_t ret;
 
 	if (!io)
 		return -1;
 
 	if (io->method->write)
-		ret = io->method->write(io, buffer, size, n_write);
+		ret = io->method->write(io, buffer, size);
 	else
 		ret = -2;
 
