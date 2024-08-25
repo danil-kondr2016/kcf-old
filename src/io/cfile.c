@@ -92,6 +92,14 @@ static int _cfile_write(IO *io, const void *buffer, int64_t size,
 	return 0;
 }
 
+#ifdef _WIN32
+#define _cfseek _fseeki64
+#define _cftell _ftelli64
+#else
+#define _cfseek fseeko
+#define _cftell ftello
+#endif
+
 static int64_t _cfile_seek(IO *io, int64_t offset, int whence)
 {
 	FILE *file;
@@ -110,15 +118,7 @@ static int64_t _cfile_seek(IO *io, int64_t offset, int whence)
 		return -1;
 	}
 
-	if (sizeof(long) == 4) {
-#ifdef _WIN32
-		ret = _fseeki64(file, offset, std_whence);
-#else
-		ret = fseeko64(file, offset, std_whence);
-#endif
-	} else {
-		ret = fseek(file, offset, std_whence);
-	}
+	ret = _cfseek(file, offset, std_whence);
 
 	return ret;
 }
@@ -132,15 +132,7 @@ static int64_t _cfile_tell(IO *io)
 	assert(io->ptr);
 	file = (FILE *)io->ptr;
 
-	if (sizeof(long) == 4) {
-#ifdef _WIN32
-		ret = _ftelli64(file);
-#else
-		ret = ftello64(file);
-#endif
-	} else {
-		ret = ftell(file);
-	}
+	ret = _cftell(file);
 
 	return ret;
 }

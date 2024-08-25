@@ -112,7 +112,7 @@ static int _fd_write(IO *io, const void *buffer, int64_t size, int64_t *n_write)
 			write_length += ret;
 		} while (size > 0);
 	} else {
-		ret = _write(io->handle, buffer, size);
+		ret = _fd_write_fn(io->handle, buffer, size);
 		if (ret >= 0)
 			write_length = ret;
 		else
@@ -128,8 +128,8 @@ static int _fd_write(IO *io, const void *buffer, int64_t size, int64_t *n_write)
 #define _fd_seek_ret int64_t
 #define _fd_seek_fn  _lseeki64
 #else
-#define _fd_seek_ret off64_t
-#define _fd_seek_fn  lseeko64
+#define _fd_seek_ret off_t
+#define _fd_seek_fn  lseek
 #endif
 
 static int64_t _fd_seek(IO *io, int64_t offset, int whence)

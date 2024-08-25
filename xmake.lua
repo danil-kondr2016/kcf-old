@@ -1,6 +1,8 @@
 -- TODO replace with my IO
 add_requires('openssl3')
 
+add_defines("_FILE_OFFSET_BITS=64")
+
 target("io")
 	set_kind("static")
 	add_files("src/io/*.c")
