@@ -5,6 +5,7 @@ target("io")
 	set_kind("static")
 	add_files("src/io/*.c")
 	add_headerfiles("include/(io/*.h)")
+	add_includedirs("include", {public = true})
 
 target("kcflib")
 	set_kind("static")
