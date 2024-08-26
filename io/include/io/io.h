@@ -33,11 +33,11 @@ IO *IO_open_cfile(const char *path, const char *mode);
 
 IO *IO_create_fd(int fd, int should_close);
 
-// #ifdef _WIN32
-// #include <windows.h>
-// IO *IO_create_handle(HANDLE hFile, int should_close);
-// #else
-// IO *IO_create_handle(void *hFile, int should_close);
-// #endif
+#ifdef _WIN32
+#include <windows.h>
+IO *IO_create_handle(HANDLE hFile, int should_close);
+#else
+IO *IO_create_handle(void *hFile, int should_close);
+#endif
 
 #endif
