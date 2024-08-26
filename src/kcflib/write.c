@@ -31,9 +31,9 @@ KCFERROR KCF_write_record(KCF *kcf, struct KcfRecord *Record)
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
-	kcf->RecordOffset = BIO_tell(kcf->Stream);
+	kcf->RecordOffset = IO_tell(kcf->Stream);
 	rec_to_buffer(Record, buffer, Record->HeadSize);
-	if (!BIO_write_ex(kcf->Stream, buffer, Record->HeadSize, NULL))
+	if (IO_write(kcf->Stream, buffer, Record->HeadSize) < 0)
 		return KCF_ERROR_WRITE;
 
 	/* Save all information for backpatching */
@@ -96,9 +96,9 @@ KCFERROR KCF_write_record_with_added_data(KCF *kcf, struct KcfRecord *Record,
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
 	rec_to_buffer(Record, buffer, Record->HeadSize);
-	if (!BIO_write_ex(kcf->Stream, buffer, Record->HeadSize, NULL))
+	if (IO_write(kcf->Stream, buffer, Record->HeadSize) < 0)
 		return KCF_ERROR_WRITE;
-	if (!BIO_write_ex(kcf->Stream, AddedData, Size, NULL))
+	if (IO_write(kcf->Stream, AddedData, Size) < 0)
 		return KCF_ERROR_WRITE;
 
 	trace_kcf_state(kcf);
@@ -126,7 +126,7 @@ KCFERROR KCF_write_added_data(KCF *kcf, uint8_t *AddedData, size_t Size)
 			return KCF_ERROR_OK;
 	}
 
-	if (!BIO_write_ex(kcf->Stream, AddedData, Size, NULL))
+	if (IO_write(kcf->Stream, AddedData, Size) < 0)
 		return KCF_ERROR_WRITE;
 
 	kcf->WrittenAddedData += Size;
@@ -156,8 +156,8 @@ KCFERROR KCF_finish_added_data(KCF *kcf)
 		goto cleanup;
 	}
 
-	kcf->RecordEndOffset = BIO_tell(kcf->Stream);
-	if (BIO_seek(kcf->Stream, kcf->RecordOffset) < 0)
+	kcf->RecordEndOffset = IO_tell(kcf->Stream);
+	if (IO_seek(kcf->Stream, kcf->RecordOffset, IO_SEEK_SET) < 0)
 		return trace_kcf_error(KCF_ERROR_WRITE);
 
 	kcf->LastRecord.AddedSize      = kcf->WrittenAddedData;
@@ -168,9 +168,9 @@ KCFERROR KCF_finish_added_data(KCF *kcf)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 	rec_to_buffer(&kcf->LastRecord, buffer, kcf->LastRecord.HeadSize);
 
-	if (!BIO_write_ex(kcf->Stream, buffer, kcf->LastRecord.HeadSize, NULL))
+	if (IO_write(kcf->Stream, buffer, kcf->LastRecord.HeadSize) < 0)
 		return KCF_ERROR_WRITE;
-	BIO_seek(kcf->Stream, kcf->RecordEndOffset);
+	IO_seek(kcf->Stream, kcf->RecordEndOffset, IO_SEEK_SET);
 
 cleanup:
 	rec_clear(&kcf->LastRecord);

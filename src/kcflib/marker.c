@@ -30,7 +30,7 @@ KCFERROR KCF_find_marker(KCF *kcf)
 		buf[3] = buf[4];
 		buf[4] = buf[5];
 
-		ret = BIO_read(kcf->Stream, &buf[5], 1);
+		ret = IO_read(kcf->Stream, &buf[5], 1);
 	} while (ret > 0);
 
 	if (ret == -1)
@@ -56,7 +56,7 @@ KCFERROR KCF_write_marker(KCF *kcf)
 	marker[4] = MARKER_5;
 	marker[5] = MARKER_6;
 
-	if (BIO_write(kcf->Stream, marker, 6) < 0)
+	if (IO_write(kcf->Stream, marker, 6) < 0)
 		return KCF_ERROR_WRITE;
 
 	kcf->WriterState = KCF_WRSTATE_IDLE;

@@ -5,7 +5,7 @@
 
 #include "kcf_impl.h"
 
-KCFERROR KCF_create(BIO *stream, KCF **pkcf)
+KCFERROR KCF_create(IO *stream, KCF **pkcf)
 {
 	KCF *result;
 	if (!pkcf || !stream)
@@ -17,9 +17,6 @@ KCFERROR KCF_create(BIO *stream, KCF **pkcf)
 	}
 
 	result->Stream = stream;
-	if (!BIO_should_write(result->Stream)) {
-		result->IsWritable = true;
-	}
 
 	*pkcf = result;
 	return KCF_ERROR_OK;
@@ -34,7 +31,7 @@ bool KCF_start_reading(KCF *kcf)
 {
 	if (kcf->WriterState == KCF_WRSTATE_ADDED_DATA)
 		KCF_finish_added_data(kcf);
-	BIO_flush(kcf->Stream);
+	IO_flush(kcf->Stream);
 
 	kcf->IsWriting   = false;
 	kcf->ReaderState = KCF_RDSTATE_IDLE;

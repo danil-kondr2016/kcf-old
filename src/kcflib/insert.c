@@ -30,7 +30,7 @@ KCFERROR KCF_begin_file(KCF *kcf, struct KcfFileInfo *FileInfo)
 
 #define INSERT_FILE_BUFFER_SIZE 4096
 
-KCFERROR KCF_insert_file_data(KCF *kcf, BIO *Input)
+KCFERROR KCF_insert_file_data(KCF *kcf, IO *Input)
 {
 	uint8_t Buffer[INSERT_FILE_BUFFER_SIZE];
 	size_t BytesRead, BytesWritten;
@@ -46,10 +46,9 @@ KCFERROR KCF_insert_file_data(KCF *kcf, BIO *Input)
 
 	/* TODO compression */
 	do {
-		ret = BIO_read_ex(Input, Buffer, INSERT_FILE_BUFFER_SIZE,
-		                  &BytesRead);
-		if (!ret)
-			return KCF_ERROR_WRITE;
+		ret = IO_read(Input, Buffer, INSERT_FILE_BUFFER_SIZE);
+		if (ret < 0)
+			return KCF_ERROR_READ;
 
 		Error = KCF_write_added_data(kcf, Buffer, BytesRead);
 		if (Error)

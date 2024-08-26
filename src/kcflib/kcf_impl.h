@@ -7,7 +7,6 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "read.h"
 #include "record.h"
@@ -57,7 +56,7 @@ struct kcf_st {
 	uint64_t RecordOffset;
 	uint64_t RecordEndOffset;
 
-	BIO *Stream;
+	IO *Stream;
 	struct KcfRecord LastRecord;
 	struct {
 		bool HasAddedDataCRC32 : 1;

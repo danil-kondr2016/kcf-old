@@ -67,7 +67,7 @@ cleanup:
 	return Error;
 }
 
-KCFERROR KCF_extract(KCF *kcf, BIO *Output)
+KCFERROR KCF_extract(KCF *kcf, IO *Output)
 {
 	KCFERROR Error = KCF_ERROR_OK;
 	uint8_t Buffer[4096];
@@ -105,9 +105,8 @@ KCFERROR KCF_extract(KCF *kcf, BIO *Output)
 			if (Error)
 				goto cleanup2;
 
-			ret = BIO_write_ex(Output, Buffer, BytesRead,
-			                   &BytesWritten);
-			if (!ret) {
+			ret = IO_write(Output, Buffer, BytesRead);
+			if (ret < 0) {
 				Error = KCF_ERROR_WRITE;
 				goto cleanup2;
 			}
