@@ -47,7 +47,10 @@ static int64_t _cfile_read(IO *io, void *buffer, int64_t size)
 			read_4 = fread(buffer, 1, to_read, file);
 			if (ferror(file))
 				return -1;
+
+			size -= read_4;
 			read_length += read_4;
+			buffer += read_4;
 		} while (size > 0);
 	} else {
 		to_read     = size;
@@ -79,6 +82,8 @@ static int64_t _cfile_write(IO *io, const void *buffer, int64_t size)
 			if (ferror(file))
 				return -1;
 			write_length += write_4;
+			size -= write_4;
+			buffer += write_4;
 		} while (size > 0);
 	} else {
 		to_write     = size;

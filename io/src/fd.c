@@ -69,6 +69,7 @@ static int64_t _fd_read(IO *io, void *buffer, int64_t size)
 		
 			size -= ret;
 			read_length += ret;
+			buffer += ret;
 		} while (size > 0);
 	} else {
 		ret = _fd_read_fn(io->handle, buffer, size);
@@ -116,6 +117,7 @@ static int64_t _fd_write(IO *io, const void *buffer, int64_t size)
 		
 			size -= ret;
 			write_length += ret;
+			buffer += ret;
 		} while (size > 0);
 	} else {
 		ret = _fd_write_fn(io->handle, buffer, size);
