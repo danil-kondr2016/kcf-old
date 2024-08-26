@@ -27,6 +27,7 @@ struct io_method_st {
 	int64_t (*write)(IO *io, const void *buffer, int64_t size);
 	int64_t (*seek)(IO *io, int64_t offset, int whence);
 	int64_t (*tell)(IO *io);
+	int (*flush)(IO *io);
 	int (*close)(IO *io);
 };
 

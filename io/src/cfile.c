@@ -11,6 +11,7 @@ static int64_t _cfile_read(IO *io, void *buffer, int64_t size);
 static int64_t _cfile_write(IO *io, const void *buffer, int64_t size);
 static int64_t _cfile_seek(IO *io, int64_t offset, int whence);
 static int64_t _cfile_tell(IO *io);
+static int _cfile_flush(IO *io);
 static int _cfile_close(IO *io);
 
 static const IO_METHOD _cfile_method = {
@@ -19,6 +20,7 @@ static const IO_METHOD _cfile_method = {
     _cfile_write, 
     _cfile_seek,
     _cfile_tell, 
+    _cfile_flush,
     _cfile_close,
 };
 
@@ -128,6 +130,19 @@ static int64_t _cfile_tell(IO *io)
 
 	ret = _cftell(file);
 
+	return ret;
+}
+
+static int _cfile_flush(IO *io)
+{
+	FILE *file;
+	int ret = 0;
+
+	assert(io);
+	assert(io->ptr);
+	file = (FILE *)io->ptr;
+
+	ret = fflush(file);
 	return ret;
 }
 

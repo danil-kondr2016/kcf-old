@@ -16,6 +16,12 @@ static int64_t _fd_read(IO *io, void *buffer, int64_t size);
 static int64_t _fd_write(IO *io, const void *buffer, int64_t size);
 static int64_t _fd_seek(IO *io, int64_t offset, int whence);
 static int64_t _fd_tell(IO *io);
+
+static int _fd_flush(IO *io)
+{
+	return 0;
+}
+
 static int _fd_close(IO *io);
 
 static const IO_METHOD _fd_method = {
@@ -24,6 +30,7 @@ static const IO_METHOD _fd_method = {
 	_fd_write,
 	_fd_seek,
 	_fd_tell,
+	_fd_flush,
 	_fd_close
 };
 

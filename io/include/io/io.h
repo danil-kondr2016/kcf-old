@@ -26,6 +26,7 @@ int64_t IO_read(IO *io, void *buffer, int64_t size);
 int64_t IO_write(IO *io, const void *buffer, int64_t size);
 int64_t IO_seek(IO *io, int64_t offset, int whence);
 int64_t IO_tell(IO *io);
+int     IO_flush(IO *io);
 
 IO *IO_create_fp(FILE *f, int should_close);
 IO *IO_open_cfile(const char *path, const char *mode);

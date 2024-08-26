@@ -90,3 +90,18 @@ int64_t IO_tell(IO *io)
 
 	return ret;
 }
+
+int IO_flush(IO *io)
+{
+	int ret;
+
+	if (!io)
+		return -1;
+
+	if (io->method->flush)
+		ret = io->method->flush(io);
+	else
+		ret = -2;
+
+	return ret;
+}
