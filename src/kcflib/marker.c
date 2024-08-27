@@ -1,5 +1,5 @@
-#include "errors.h"
-#include "archive.h"
+#include <kcf/archive.h>
+#include <kcf/errors.h>
 
 #include "kcf_impl.h"
 
@@ -10,21 +10,18 @@
 #define MARKER_5 0x06
 #define MARKER_6 0x00
 
-KCFERROR ScanArchiveForMarker(HKCF hKCF)
+KCFERROR KCF_find_marker(KCF *kcf)
 {
 	uint8_t buf[6] = {0};
-	size_t n_read = 0;
+	int ret;
 
-	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_SEEKING_MARKER)
+	if (kcf->IsWriting || kcf->ReaderState != KCF_RDSTATE_MARKER)
 		return KCF_ERROR_INVALID_STATE;
 
 	do {
-		if (buf[0] == MARKER_1
-			&& buf[1] == MARKER_2
-			&& buf[2] == MARKER_3
-			&& buf[3] == MARKER_4
-			&& buf[4] == MARKER_5
-			&& buf[5] == MARKER_6)
+		if (buf[0] == MARKER_1 && buf[1] == MARKER_2 &&
+		    buf[2] == MARKER_3 && buf[3] == MARKER_4 &&
+		    buf[4] == MARKER_5 && buf[5] == MARKER_6)
 			goto ok;
 
 		buf[0] = buf[1];
@@ -33,31 +30,35 @@ KCFERROR ScanArchiveForMarker(HKCF hKCF)
 		buf[3] = buf[4];
 		buf[4] = buf[5];
 
-		n_read = fread(&buf[5], 1, 1, hKCF->File);
-	}
-	while (n_read);
+		ret = IO_read(kcf->Stream, &buf[5], 1);
+	} while (ret > 0);
 
-	if (ferror(hKCF->File))
+	if (ret == -1)
 		return KCF_ERROR_READ;
 
 	return KCF_ERROR_INVALID_FORMAT;
 ok:
-	hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
+	kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
 	return KCF_ERROR_OK;
 }
 
-KCFERROR WriteArchiveMarker(HKCF hKCF)
+KCFERROR KCF_write_marker(KCF *kcf)
 {
-	if (!hKCF->IsWriting || hKCF->WriterState != KCF_STATE_WRITING_MARKER)
+	uint8_t marker[6];
+	
+	if (!kcf->IsWriting || kcf->WriterState != KCF_WRSTATE_MARKER)
 		return KCF_ERROR_INVALID_STATE;
 
-	if (fputc(MARKER_1, hKCF->File) == EOF) return KCF_ERROR_WRITE;
-	if (fputc(MARKER_2, hKCF->File) == EOF) return KCF_ERROR_WRITE;
-	if (fputc(MARKER_3, hKCF->File) == EOF) return KCF_ERROR_WRITE;
-	if (fputc(MARKER_4, hKCF->File) == EOF) return KCF_ERROR_WRITE;
-	if (fputc(MARKER_5, hKCF->File) == EOF) return KCF_ERROR_WRITE;
-	if (fputc(MARKER_6, hKCF->File) == EOF) return KCF_ERROR_WRITE;
+	marker[0] = MARKER_1;
+	marker[1] = MARKER_2;
+	marker[2] = MARKER_3;
+	marker[3] = MARKER_4;
+	marker[4] = MARKER_5;
+	marker[5] = MARKER_6;
 
-	hKCF->WriterState = KCF_STATE_WRITING_IDLE;
+	if (IO_write(kcf->Stream, marker, 6) < 0)
+		return KCF_ERROR_WRITE;
+
+	kcf->WriterState = KCF_WRSTATE_IDLE;
 	return KCF_ERROR_OK;
 }

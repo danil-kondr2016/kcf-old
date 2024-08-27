@@ -1,85 +1,49 @@
-#include "stdio64.h"
-#include "archive.h"
+#include <kcf/archive.h>
+#include <kcf/errors.h>
 
 #include <stdlib.h>
 
 #include "kcf_impl.h"
 
-KCFERROR CreateArchive(char *Path, int Mode, PHKCF phKCF)
+KCFERROR KCF_create(IO *stream, KCF **pkcf)
 {
-	HKCF Result = NULL;
-	char *ModeString = NULL;
-	int KcfModeValue = 0;
-
-	if (!phKCF)
+	KCF *result;
+	if (!pkcf || !stream)
 		return KCF_ERROR_INVALID_PARAMETER;
 
-	if (!Path)
-		return KCF_ERROR_INVALID_PARAMETER;
-
-	switch (Mode) {
-	case KCF_MODE_READ:
-		ModeString = "rb";
-		break;
-	case KCF_MODE_CREATE:
-		ModeString = "w+b";
-		break;
-	case KCF_MODE_MODIFY:
-		ModeString = "r+b";
-		break;
-	default:
-		return KCF_ERROR_INVALID_PARAMETER;
-	}
-
-	Result = calloc(sizeof(struct Kcf), 1);
-	if (!Result)
+	result = calloc(1, sizeof(struct kcf_st));
+	if (!result) {
 		return KCF_ERROR_OUT_OF_MEMORY;
-
-	Result->File = kcf_fopen(Path, ModeString);
-	if (!Result->File) {
-		return ErrnoToKcf();
 	}
 
-	if (Mode == KCF_MODE_CREATE) {
-		Result->IsWriting = true;
-		Result->WriterState = KCF_STATE_WRITING_MARKER;
-	}
-	else {
-		Result->ReaderState = KCF_STATE_SEEKING_MARKER;
-	}
+	result->Stream = stream;
 
-	if (Mode == KCF_MODE_MODIFY || Mode == KCF_MODE_CREATE)
-		Result->IsWritable = true;
-	else
-	 	Result->IsWritable = false;
-
-	*phKCF = Result;
+	*pkcf = result;
 	return KCF_ERROR_OK;
 }
 
-void CloseArchive(HKCF hKCF)
+void KCF_close(KCF *kcf)
 {
-	fclose(hKCF->File);
-	free(hKCF);
+	free(kcf);
 }
 
-bool StartReadingFromArchive(HKCF hKCF)
+bool KCF_start_reading(KCF *kcf)
 {
-	if (hKCF->WriterState == KCF_STATE_WRITING_ADDED_DATA)
-		FinishAddedData(hKCF);
-	fflush(hKCF->File);
+	if (kcf->WriterState == KCF_WRSTATE_ADDED_DATA)
+		KCF_finish_added_data(kcf);
+	IO_flush(kcf->Stream);
 
-	hKCF->IsWriting = false;
-	hKCF->ReaderState = KCF_STATE_READING_IDLE;
+	kcf->IsWriting   = false;
+	kcf->ReaderState = KCF_RDSTATE_IDLE;
 	return true;
 }
 
-bool StartWritingToArchive(HKCF hKCF)
+bool KCF_start_writing(KCF *kcf)
 {
-	if (!hKCF->IsWritable)
+	if (!kcf->IsWritable)
 		return false;
 
-	hKCF->IsWriting = true;
-	hKCF->WriterState = KCF_STATE_WRITING_IDLE;
+	kcf->IsWriting   = true;
+	kcf->WriterState = KCF_WRSTATE_IDLE;
 	return true;
 }

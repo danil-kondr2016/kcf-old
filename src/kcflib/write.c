@@ -1,125 +1,124 @@
-#include "stdio64.h"
-#include "crc32c.h"
-#include "errors.h"
-#include "archive.h"
+#include <kcf/archive.h>
+#include <kcf/errors.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "crc32c.h"
 #include "kcf_impl.h"
 
-KCFERROR WriteRecord(HKCF hKCF, struct KcfRecord *Record)
+KCFERROR KCF_write_record(KCF *kcf, struct KcfRecord *Record)
 {
 	uint8_t *buffer;
 
 	trace_kcf_msg("WriteRecord begin");
 	trace_kcf_record(Record);
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 
-	if (!hKCF->IsWriting)
+	if (!kcf->IsWriting)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
-	if (hKCF->WriterState == KCF_STATE_WRITING_IDLE)
-		hKCF->WriterState = KCF_STATE_WRITING_MAIN_RECORD;
-	if (hKCF->WriterState == KCF_STATE_WRITING_MARKER)
+	if (kcf->WriterState == KCF_WRSTATE_IDLE)
+		kcf->WriterState = KCF_WRSTATE_RECORD;
+	if (kcf->WriterState == KCF_WRSTATE_MARKER)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
-	if (hKCF->WriterState == KCF_STATE_WRITING_ADDED_DATA)
-		FinishAddedData(hKCF);
+	if (kcf->WriterState == KCF_WRSTATE_ADDED_DATA)
+		KCF_finish_added_data(kcf);
 
 	/* Ensure that record CRC32 is valid */
-	FixRecord(Record);
-	buffer = malloc(Record->Header.HeadSize);
+	rec_fix(Record);
+	buffer = malloc(Record->HeadSize);
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
-	hKCF->RecordOffset = kcf_ftell(hKCF->File);
-	RecordToBuffer(Record, buffer, Record->Header.HeadSize);
-	if (!fwrite(buffer, Record->Header.HeadSize, 1, hKCF->File))
-		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));
+	kcf->RecordOffset = IO_tell(kcf->Stream);
+	rec_to_buffer(Record, buffer, Record->HeadSize);
+	if (IO_write(kcf->Stream, buffer, Record->HeadSize) < 0)
+		return KCF_ERROR_WRITE;
 
 	/* Save all information for backpatching */
-	hKCF->HasAddedSize = !!(Record->Header.HeadFlags & KCF_HAS_ADDED_SIZE_4);
-	hKCF->HasAddedDataCRC32 = !!(Record->Header.HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
-	if (hKCF->HasAddedSize) {
-		CopyRecord(&hKCF->LastRecord, Record);
-		hKCF->AddedDataToBeWritten = hKCF->LastRecord.Header.AddedSize;
-		hKCF->WriterState = KCF_STATE_WRITING_ADDED_DATA;
+	kcf->HasAddedSize = !!(Record->HeadFlags & KCF_HAS_ADDED_SIZE_4);
+	kcf->HasAddedDataCRC32 =
+	    !!(Record->HeadFlags & KCF_HAS_ADDED_DATA_CRC32);
+	if (kcf->HasAddedSize) {
+		rec_copy(&kcf->LastRecord, Record);
+		kcf->AddedDataToBeWritten = kcf->LastRecord.AddedSize;
+		kcf->WriterState          = KCF_WRSTATE_ADDED_DATA;
 	}
 
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 	trace_kcf_msg("WriteRecord end");
 
 	return KCF_ERROR_OK;
 }
 
-KCFERROR WriteRecordWithAddedData(HKCF hKCF, struct KcfRecord *Record, 
-	uint8_t *AddedData, size_t Size
-)
+KCFERROR KCF_write_record_with_added_data(KCF *kcf, struct KcfRecord *Record,
+                                          uint8_t *AddedData, size_t Size)
 {
 	uint8_t *buffer;
 
 	trace_kcf_msg("WriteRecordWithAddedData begin");
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 
-	if (!hKCF->IsWriting)
+	if (!kcf->IsWriting)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
-	if (hKCF->WriterState == KCF_STATE_WRITING_IDLE)
-		hKCF->WriterState = KCF_STATE_WRITING_MAIN_RECORD;
-	if (hKCF->WriterState == KCF_STATE_WRITING_IDLE || hKCF->WriterState == KCF_STATE_WRITING_MARKER)
+	if (kcf->WriterState == KCF_WRSTATE_IDLE)
+		kcf->WriterState = KCF_WRSTATE_RECORD;
+	if (kcf->WriterState == KCF_WRSTATE_IDLE ||
+	    kcf->WriterState == KCF_WRSTATE_MARKER)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
-	
-	if (hKCF->WriterState == KCF_STATE_WRITING_ADDED_DATA)
-		FinishAddedData(hKCF);
+
+	if (kcf->WriterState == KCF_WRSTATE_ADDED_DATA)
+		KCF_finish_added_data(kcf);
 
 	/* Ensure that record CRC32 is valid */
 	if (AddedData && Size) {
-		if (HasAddedDataCRC32(Record)) {
-			Record->Header.AddedDataCRC32 = crc32c(0, AddedData, Size);
+		if (rec_has_added_data_CRC(Record)) {
+			Record->AddedDataCRC32 = crc32c(0, AddedData, Size);
 		}
 
 		if (Size > 2147483647) {
-			Record->Header.HeadFlags |= KCF_HAS_ADDED_SIZE_8;
+			Record->HeadFlags |= KCF_HAS_ADDED_SIZE_8;
+		} else {
+			Record->HeadFlags |= KCF_HAS_ADDED_SIZE_4;
 		}
-		else {
-			Record->Header.HeadFlags |= KCF_HAS_ADDED_SIZE_4;
-		}
-		Record->Header.AddedSize = Size;
+		Record->AddedSize = Size;
+	} else {
+		Record->HeadFlags &= ~KCF_HAS_ADDED_DATA_CRC32;
+		Record->HeadFlags &= ~KCF_HAS_ADDED_SIZE_8;
+		Record->AddedSize      = 0;
+		Record->AddedDataCRC32 = 0;
 	}
-	else {
-		Record->Header.HeadFlags &= ~KCF_HAS_ADDED_DATA_CRC32;
-		Record->Header.HeadFlags &= ~KCF_HAS_ADDED_SIZE_8;
-		Record->Header.AddedSize = 0;
-		Record->Header.AddedDataCRC32 = 0;
-	}
-	
-	FixRecord(Record);
-	buffer = malloc(Record->Header.HeadSize);
+
+	rec_fix(Record);
+	buffer = malloc(Record->HeadSize);
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
-	RecordToBuffer(Record, buffer, Record->Header.HeadSize);
-	if (!fwrite(buffer, Record->Header.HeadSize, 1, hKCF->File))
-		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));
-	if (!fwrite(AddedData, Size, 1, hKCF->File))
-		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));
+	rec_to_buffer(Record, buffer, Record->HeadSize);
+	if (IO_write(kcf->Stream, buffer, Record->HeadSize) < 0)
+		return KCF_ERROR_WRITE;
+	if (IO_write(kcf->Stream, AddedData, Size) < 0)
+		return KCF_ERROR_WRITE;
 
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 	trace_kcf_msg("WriteRecord end");
 
 	return KCF_ERROR_OK;
 }
 
-KCFERROR WriteAddedData(HKCF hKCF, uint8_t *AddedData, size_t Size)
+KCFERROR KCF_write_added_data(KCF *kcf, uint8_t *AddedData, size_t Size)
 {
 	trace_kcf_msg("WriteAddedData begin");
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 
-	if (!hKCF->IsWriting || hKCF->WriterState != KCF_STATE_WRITING_ADDED_DATA)
+	if (!kcf->IsWriting || kcf->WriterState != KCF_WRSTATE_ADDED_DATA)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
-	if (hKCF->AddedDataToBeWritten > 0) {
+	if (kcf->AddedDataToBeWritten > 0) {
 		size_t Remaining;
 
-		Remaining = hKCF->AddedDataToBeWritten - hKCF->WrittenAddedData;
+		Remaining = kcf->AddedDataToBeWritten - kcf->WrittenAddedData;
 		if (Size > Remaining)
 			Size = Remaining;
 
@@ -127,78 +126,80 @@ KCFERROR WriteAddedData(HKCF hKCF, uint8_t *AddedData, size_t Size)
 			return KCF_ERROR_OK;
 	}
 
-	if (!fwrite(AddedData, Size, 1, hKCF->File))
-		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));
+	if (IO_write(kcf->Stream, AddedData, Size) < 0)
+		return KCF_ERROR_WRITE;
 
-	hKCF->WrittenAddedData += Size;
-	if (hKCF->HasAddedDataCRC32)
-		hKCF->AddedDataCRC32 = crc32c(hKCF->AddedDataCRC32, AddedData, Size);
+	kcf->WrittenAddedData += Size;
+	if (kcf->HasAddedDataCRC32)
+		kcf->AddedDataCRC32 =
+		    crc32c(kcf->AddedDataCRC32, AddedData, Size);
 
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 	trace_kcf_msg("WriteAddedData end");
 
 	return KCF_ERROR_OK;
 }
 
-KCFERROR FinishAddedData(HKCF hKCF)
+KCFERROR KCF_finish_added_data(KCF *kcf)
 {
 	uint8_t *buffer;
 
 	trace_kcf_msg("FinishAddedData begin");
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 
-	if (!hKCF->IsWriting || hKCF->WriterState != KCF_STATE_WRITING_ADDED_DATA)
+	if (!kcf->IsWriting || kcf->WriterState != KCF_WRSTATE_ADDED_DATA)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
-	/* If data size is known and no CRC32 of added data is calculated, don't backpatch */
-	if (hKCF->AddedDataToBeWritten > 0 && !hKCF->HasAddedDataCRC32) {
-		goto cleanup; 
+	/* If data size is known and no CRC32 of added data is calculated, don't
+	 * backpatch */
+	if (kcf->AddedDataToBeWritten > 0 && !kcf->HasAddedDataCRC32) {
+		goto cleanup;
 	}
 
-	hKCF->RecordEndOffset = kcf_ftell(hKCF->File);
-	if (kcf_fseek(hKCF->File, hKCF->RecordOffset, SEEK_SET) == -1)
+	kcf->RecordEndOffset = IO_tell(kcf->Stream);
+	if (IO_seek(kcf->Stream, kcf->RecordOffset, IO_SEEK_SET) < 0)
 		return trace_kcf_error(KCF_ERROR_WRITE);
 
-	hKCF->LastRecord.Header.AddedSize = hKCF->WrittenAddedData;
-	hKCF->LastRecord.Header.AddedDataCRC32 = hKCF->AddedDataCRC32;
-	FixRecord(&hKCF->LastRecord);
-	buffer = malloc(hKCF->LastRecord.Header.HeadSize);
+	kcf->LastRecord.AddedSize      = kcf->WrittenAddedData;
+	kcf->LastRecord.AddedDataCRC32 = kcf->AddedDataCRC32;
+	rec_fix(&kcf->LastRecord);
+	buffer = malloc(kcf->LastRecord.HeadSize);
 	if (!buffer)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
-	RecordToBuffer(&hKCF->LastRecord, buffer, hKCF->LastRecord.Header.HeadSize);
+	rec_to_buffer(&kcf->LastRecord, buffer, kcf->LastRecord.HeadSize);
 
-	if (!fwrite(buffer, hKCF->LastRecord.Header.HeadSize, 1, hKCF->File))
-		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_WRITING));
-	kcf_fseek(hKCF->File, hKCF->RecordEndOffset, SEEK_SET);
+	if (IO_write(kcf->Stream, buffer, kcf->LastRecord.HeadSize) < 0)
+		return KCF_ERROR_WRITE;
+	IO_seek(kcf->Stream, kcf->RecordEndOffset, IO_SEEK_SET);
 
 cleanup:
-	ClearRecord(&hKCF->LastRecord);
-	hKCF->RecordOffset = 0;
-	hKCF->RecordEndOffset = 0;
-	hKCF->WrittenAddedData = 0;
-	hKCF->AddedDataToBeWritten = 0;
-	hKCF->AddedDataCRC32 = 0;
-	hKCF->HasAddedDataCRC32 = false;
-	hKCF->HasAddedSize = false;
-	hKCF->WriterState = KCF_STATE_WRITING_MAIN_RECORD;
+	rec_clear(&kcf->LastRecord);
+	kcf->RecordOffset         = 0;
+	kcf->RecordEndOffset      = 0;
+	kcf->WrittenAddedData     = 0;
+	kcf->AddedDataToBeWritten = 0;
+	kcf->AddedDataCRC32       = 0;
+	kcf->HasAddedDataCRC32    = false;
+	kcf->HasAddedSize         = false;
+	kcf->WriterState          = KCF_WRSTATE_RECORD;
 
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 	trace_kcf_msg("FinishAddedData end");
 
 	return KCF_ERROR_OK;
 }
 
-KCFERROR WriteArchiveHeader(HKCF hKCF, int Reserved)
+KCFERROR KCF_write_archive_header(KCF *kcf, int Reserved)
 {
 	KCFERROR Error;
-	struct KcfArchiveHeader ArchiveHeader;
+	struct KcfArchiveHeader ahdr;
 	struct KcfRecord Record;
 
 	(void)Reserved;
-	ArchiveHeader.ArchiveVersion = 1;
-	ArchiveHeaderToRecord(&ArchiveHeader, &Record);
-	
-	Error = WriteRecord(hKCF, &Record);
-	ClearRecord(&Record);
+	ahdr.ArchiveVersion = 1;
+	rec_from_archive_header(&ahdr, &Record);
+
+	Error = KCF_write_record(kcf, &Record);
+	rec_clear(&Record);
 	return Error;
 }

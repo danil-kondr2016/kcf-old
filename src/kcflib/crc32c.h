@@ -6,6 +6,7 @@
 #ifndef _CRC32_H_
 #define _CRC32_H_
 
+#include <stddef.h>
 #include <stdint.h>
 
 // Return the CRC-32C of buf[0..len-1] given the starting CRC crc.  This can be

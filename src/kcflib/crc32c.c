@@ -46,6 +46,7 @@
 
 #ifdef _MSC_VER
 #include <intrin.h>
+#include <nmmintrin.h>
 #endif
 
 /* CRC-32C (iSCSI) polynomial in reversed bit order. */

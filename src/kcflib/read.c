@@ -1,232 +1,245 @@
-#include "archive.h"
-#include "errors.h"
-#include "bytepack.h"
-#include "utils.h"
-#include "crc32c.h"
+#include <kcf/archive.h>
+#include <kcf/errors.h>
 
-#include "kcf_impl.h"
-#include <stdlib.h>
 #include <assert.h>
+#include <stdlib.h>
 
-static
-KCFERROR read_record_header(
-		HKCF hKCF, 
-		struct KcfRecordHeader *RecordHdr,
-		size_t *HeaderSize
-)
+#include "bytepack.h"
+#include "crc32c.h"
+#include "kcf_impl.h"
+#include "read.h"
+#include "record.h"
+
+/*
+ * During the transition from stdio to OpenSSL's BIO, I have fixed
+ * another potential bug when reading 8-bit added size field (instead
+ * of 4-bit one field)
+ */
+static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
+                                   size_t *HeaderSize)
 {
 	uint8_t buffer[18] = {0};
 	ptrdiff_t hdr_size = 0;
 	size_t n_read;
+	int64_t ret;
 
-	assert(hKCF);
-	assert(RecordHdr);
+	assert(kcf);
+	assert(Record);
 
 	trace_kcf_msg("read_record_header begin");
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 
-	n_read = fread(buffer, 1, 6, hKCF->File);
-	if (n_read == 0)
-		return trace_kcf_error(FileErrorToKcf(hKCF->File, 
-			KCF_SITUATION_READING_IN_BEGINNING));
-	if (n_read < 6)
-		return trace_kcf_error(FileErrorToKcf(hKCF->File,
-			KCF_SITUATION_READING_IN_MIDDLE));
+	if (IO_read(kcf->Stream, buffer, 6) < 0) {
+		return trace_kcf_error(KCF_ERROR_READ);
+	}
+	
+	ReadU16LE(buffer, 6, &hdr_size, &Record->HeadCRC);
+	ReadU8(buffer, 6, &hdr_size, &Record->HeadType);
+	ReadU8(buffer, 6, &hdr_size, &Record->HeadFlags);
+	ReadU16LE(buffer, 6, &hdr_size, &Record->HeadSize);
 
-	ReadU16LE(buffer, 6, &hdr_size, &RecordHdr->HeadCRC);
-	ReadU8(buffer, 6, &hdr_size, &RecordHdr->HeadType);
-	ReadU8(buffer, 6, &hdr_size, &RecordHdr->HeadFlags);
-	ReadU16LE(buffer, 6, &hdr_size, &RecordHdr->HeadSize);
+	trace_kcf_msg("read_record_header %04X %02X %02X %04X", Record->HeadCRC,
+	              Record->HeadType, Record->HeadFlags, Record->HeadSize);
 
-	trace_kcf_msg("read_record_header %04X %02X %02X %04X", 
-		RecordHdr->HeadCRC, RecordHdr->HeadType, 
-		RecordHdr->HeadFlags, RecordHdr->HeadSize);
+	Record->AddedSize = 0;
 
-	RecordHdr->AddedSize = 0;
-
-	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_4) != 0) {
-		n_read = fread(buffer+hdr_size, 1, 4, hKCF->File);
-		if (n_read < 4)
-			return FileErrorToKcf(hKCF->File,
-				KCF_SITUATION_READING_IN_MIDDLE);
+	if ((Record->HeadFlags & KCF_HAS_ADDED_SIZE_4) != 0) {
+		if (IO_read(kcf->Stream, buffer + hdr_size, 4) < 0)
+			return trace_kcf_error(KCF_ERROR_READ);
 	}
 
-	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8)
-			== KCF_HAS_ADDED_SIZE_8) {
-		n_read = fread(buffer+hdr_size, 1, 4, hKCF->File);
-		if (n_read < 4)
-			return FileErrorToKcf(hKCF->File,
-				KCF_SITUATION_READING_IN_MIDDLE);
-		ReadU64LE(buffer, 14, &hdr_size, &RecordHdr->AddedSize);
-	}
-	else if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_SIZE_8)
-			   == KCF_HAS_ADDED_SIZE_4) {
-		ReadU32LE(buffer, 14, &hdr_size, &RecordHdr->AddedSizeLow);
+	if ((Record->HeadFlags & KCF_HAS_ADDED_SIZE_8) ==
+	    KCF_HAS_ADDED_SIZE_8) {
+		if (IO_read(kcf->Stream, buffer + hdr_size + 4, 4) < 0)
+			return trace_kcf_error(KCF_ERROR_READ);
+		ReadU64LE(buffer, 14, &hdr_size, &Record->AddedSize);
+	} else if ((Record->HeadFlags & KCF_HAS_ADDED_SIZE_8) ==
+	           KCF_HAS_ADDED_SIZE_4) {
+		ReadU32LE(buffer, 14, &hdr_size, &Record->AddedSizeLow);
 	}
 
-	if ((RecordHdr->HeadFlags & KCF_HAS_ADDED_DATA_CRC32)) {
-		n_read = fread(buffer+hdr_size, 1, 4, hKCF->File);
-		if (n_read < 4)
-			return FileErrorToKcf(hKCF->File,
-				KCF_SITUATION_READING_IN_MIDDLE);
-		ReadU32LE(buffer, 18, &hdr_size, &RecordHdr->AddedDataCRC32);
-		hKCF->AddedDataCRC32 = RecordHdr->AddedDataCRC32;
-	}
-	else {
-		hKCF->AddedDataCRC32 = 0;
-		RecordHdr->AddedDataCRC32 = 0;
+	if ((Record->HeadFlags & KCF_HAS_ADDED_DATA_CRC32)) {
+		if (IO_read(kcf->Stream, buffer + hdr_size, 4, &n_read) < 0)
+			return trace_kcf_error(KCF_ERROR_READ);
+		ReadU32LE(buffer, 18, &hdr_size, &Record->AddedDataCRC32);
+		kcf->AddedDataCRC32 = Record->AddedDataCRC32;
+	} else {
+		kcf->AddedDataCRC32    = 0;
+		Record->AddedDataCRC32 = 0;
 	}
 
-	trace_kcf_msg("read_record_header %016llX %08X", RecordHdr->AddedSize, RecordHdr->AddedDataCRC32);
+	trace_kcf_msg("read_record_header %016llX %08X", Record->AddedSize,
+	              Record->AddedDataCRC32);
 
 	if (HeaderSize)
 		*HeaderSize = hdr_size;
-	hKCF->ReaderState = KCF_STATE_AT_MAIN_FIELD_OF_RECORD;
-	trace_kcf_state(hKCF);
+	kcf->ReaderState = KCF_RDSTATE_RECORD_DATA;
+	trace_kcf_state(kcf);
 	trace_kcf_msg("read_record_header end");
 	return KCF_ERROR_OK;
 }
 
-KCFERROR ReadRecord(HKCF hKCF, struct KcfRecord *Record)
+KCFERROR KCF_read_record(KCF *kcf, struct KcfRecord *Record)
 {
 	KCFERROR Error;
 	size_t HeaderSize;
 
-	if (!hKCF)
+	if (!kcf)
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	if (!Record)
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	trace_kcf_msg("ReadRecord begin");
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 
-	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_AT_THE_BEGINNING_OF_RECORD)
+	if (kcf->IsWriting || kcf->ReaderState != KCF_RDSTATE_RECORD_HEADER)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
-	hKCF->AddedDataAlreadyRead = 0;
-	hKCF->AvailableAddedData = 0;
-	hKCF->AddedDataCRC32 = 0;
-	hKCF->ActualAddedDataCRC32 = 0;
-	Error = read_record_header(hKCF, &Record->Header, &HeaderSize);
+	kcf->AddedDataAlreadyRead = 0;
+	kcf->AvailableAddedData   = 0;
+	kcf->AddedDataCRC32       = 0;
+	kcf->ActualAddedDataCRC32 = 0;
+	Error = read_record_header(kcf, Record, &HeaderSize);
 	if (Error)
 		return Error;
-	Record->DataSize = Record->Header.HeadSize - HeaderSize;
+	Record->DataSize = Record->HeadSize - HeaderSize;
 
 	Record->Data = malloc(Record->DataSize);
 	if (!Record->Data)
 		return trace_kcf_error(KCF_ERROR_OUT_OF_MEMORY);
 
-	if (!fread(Record->Data, Record->DataSize, 1, hKCF->File))
-		return trace_kcf_error(FileErrorToKcf(hKCF->File, KCF_SITUATION_READING_IN_MIDDLE));
+	if (IO_read(kcf->Stream, Record->Data, Record->DataSize) < 0)
+		return trace_kcf_error(KCF_ERROR_READ);
 
 	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
 
-	if (HasAddedSize4(Record) || HasAddedSize8(Record))
-		hKCF->ReaderState = KCF_STATE_AT_ADDED_FIELD_OF_RECORD;
+	if (rec_has_added_size(Record))
+		kcf->ReaderState = KCF_RDSTATE_ADDED_DATA;
 	else
-		hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
+		kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
 
-	hKCF->AvailableAddedData = Record->Header.AddedSize;
+	kcf->AvailableAddedData = Record->AddedSize;
 
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 	trace_kcf_msg("ReadRecord end");
 
 	return KCF_ERROR_OK;
 }
 
-KCFERROR SkipRecord(HKCF hKCF)
+static 
+int
+IO_skip(IO *x, size_t size)
 {
-	struct KcfRecordHeader Header;
+	int ret = 0;
+	int64_t n_read, to_read, remaining;
+	uint8_t buffer[4096];
+
+	n_read = 0;
+	remaining = size;
+	do
+	{
+		to_read = 4096;
+		if (to_read > remaining)
+			to_read = remaining;
+
+		n_read = IO_read(x, buffer, to_read);
+		if (n_read < 0)
+			break;
+		remaining -= n_read;
+	}
+	while (remaining > 0);
+
+	return ret;
+}
+
+KCFERROR KCF_skip_record(KCF *kcf)
+{
+	struct KcfRecord Header;
 	size_t HeaderSize;
 	uint64_t DataSize;
 	KCFERROR Error;
 
 	trace_kcf_msg("SkipRecord begin");
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 
-	if (hKCF->IsWriting)
+	if (kcf->IsWriting)
 		return KCF_ERROR_INVALID_STATE;
-	if (hKCF->ReaderState == KCF_STATE_AT_THE_BEGINNING_OF_RECORD) {
-		Error = read_record_header(hKCF, &Header, &HeaderSize);
+	if (kcf->ReaderState == KCF_RDSTATE_RECORD_HEADER) {
+		Error = read_record_header(kcf, &Header, &HeaderSize);
 		if (Error)
 			return Error;
 
 		DataSize = Header.HeadSize - HeaderSize + Header.AddedSize;
-	}
-	else if (hKCF->ReaderState == KCF_STATE_AT_ADDED_FIELD_OF_RECORD) {
-		DataSize = hKCF->AvailableAddedData;
-	}
-	else {
+	} else if (kcf->ReaderState == KCF_RDSTATE_ADDED_DATA) {
+		DataSize = kcf->AvailableAddedData;
+	} else {
 		return KCF_ERROR_INVALID_STATE;
 	}
 
-	if (kcf_fskip(hKCF->File, DataSize) == -1)
+	if (!IO_skip(kcf->Stream, DataSize))
 		return KCF_ERROR_READ;
 
-	hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
+	kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
 
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 	trace_kcf_msg("SkipRecord end");
 
 	return KCF_ERROR_OK;
 }
 
-bool IsAddedDataAvailable(HKCF hKCF)
+bool KCF_is_added_data_available(KCF *kcf)
 {
-	if (!hKCF)
+	if (!kcf)
 		return false;
 
-	return hKCF->AvailableAddedData > 0;
+	return kcf->AvailableAddedData > 0;
 }
 
-KCFERROR ReadAddedData(
-	HKCF hKCF, 
-	void *Destination, 
-	size_t BufferSize,
-	size_t *BytesRead
-)
+KCFERROR KCF_read_added_data(KCF *kcf, void *Destination, size_t BufferSize,
+                             size_t *BytesRead)
 {
-	size_t n_read;
+	int64_t n_read;
 
-	if (!hKCF)
+	if (!kcf)
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	if (!Destination)
 		return KCF_ERROR_INVALID_PARAMETER;
 
 	trace_kcf_msg("ReadAddedData begin");
-	trace_kcf_state(hKCF);
+	trace_kcf_state(kcf);
 
-	if (hKCF->IsWriting || hKCF->ReaderState != KCF_STATE_AT_ADDED_FIELD_OF_RECORD)
+	if (kcf->IsWriting || kcf->ReaderState != KCF_RDSTATE_ADDED_DATA)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
 	if (BytesRead)
 		*BytesRead = 0;
 
-	if (hKCF->AvailableAddedData == 0) {
-		hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
-		trace_kcf_state(hKCF);
+	if (kcf->AvailableAddedData == 0) {
+		kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
+		trace_kcf_state(kcf);
 		trace_kcf_msg("ReadAddedData end");
 		return KCF_ERROR_OK;
 	}
 
-	if (hKCF->AvailableAddedData < BufferSize)
-		BufferSize = hKCF->AvailableAddedData;
+	if (kcf->AvailableAddedData < BufferSize)
+		BufferSize = kcf->AvailableAddedData;
 
-	n_read = fread(Destination, 1, BufferSize, hKCF->File);
+	n_read = IO_read(kcf->Stream, Destination, BufferSize);
 	if (n_read < BufferSize)
 		return KCF_ERROR_READ;
 
-	hKCF->AvailableAddedData -= BufferSize;
+	kcf->AvailableAddedData -= BufferSize;
 	if (BytesRead)
 		*BytesRead = n_read;
-	hKCF->ActualAddedDataCRC32 = crc32c(hKCF->ActualAddedDataCRC32, Destination, n_read);
-	hKCF->AddedDataAlreadyRead += n_read;
+	kcf->ActualAddedDataCRC32 =
+	    crc32c(kcf->ActualAddedDataCRC32, Destination, n_read);
+	kcf->AddedDataAlreadyRead += n_read;
 
-	if (hKCF->AvailableAddedData == 0)
-		hKCF->ReaderState = KCF_STATE_AT_THE_BEGINNING_OF_RECORD;
-	trace_kcf_state(hKCF);
+	if (kcf->AvailableAddedData == 0)
+		kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
+	trace_kcf_state(kcf);
 	trace_kcf_msg("ReadAddedData end");
 
 	return KCF_ERROR_OK;

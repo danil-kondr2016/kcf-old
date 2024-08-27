@@ -2,9 +2,9 @@
 #ifndef _BYTEPACK_H_
 #define _BYTEPACK_H_
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 bool ReadU64LE(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint64_t *Out);
 bool ReadU32LE(uint8_t *Buffer, size_t Size, ptrdiff_t *Offset, uint32_t *Out);
