@@ -59,7 +59,7 @@ static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
 	}
 
 	if ((Record->HeadFlags & KCF_HAS_ADDED_DATA_CRC32)) {
-		if (IO_read(kcf->Stream, buffer + hdr_size, 4, &n_read) < 0)
+		if (IO_read(kcf->Stream, buffer + hdr_size, 4) < 0)
 			return trace_kcf_error(KCF_ERROR_READ);
 		ReadU32LE(buffer, 18, &hdr_size, &Record->AddedDataCRC32);
 		kcf->AddedDataCRC32 = Record->AddedDataCRC32;
@@ -73,7 +73,7 @@ static KCFERROR read_record_header(KCF *kcf, struct KcfRecord *Record,
 
 	if (HeaderSize)
 		*HeaderSize = hdr_size;
-	kcf->ReaderState = KCF_RDSTATE_RECORD_DATA;
+	kcf->ParserState = KCF_PSTATE_READ_RECORD_DATA;
 	trace_kcf_state(kcf);
 	trace_kcf_msg("read_record_header end");
 	return KCF_ERROR_OK;
@@ -93,7 +93,9 @@ KCFERROR KCF_read_record(KCF *kcf, struct KcfRecord *Record)
 	trace_kcf_msg("ReadRecord begin");
 	trace_kcf_state(kcf);
 
-	if (kcf->IsWriting || kcf->ReaderState != KCF_RDSTATE_RECORD_HEADER)
+	if (!KCF_PSTATE_IS_READING(kcf->ParserState))
+		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
+	if (kcf->ParserState != KCF_PSTATE_READ_RECORD_HEADER)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
 	kcf->AddedDataAlreadyRead = 0;
@@ -115,9 +117,9 @@ KCFERROR KCF_read_record(KCF *kcf, struct KcfRecord *Record)
 	trace_kcf_dump_buffer(Record->Data, Record->DataSize);
 
 	if (rec_has_added_size(Record))
-		kcf->ReaderState = KCF_RDSTATE_ADDED_DATA;
+		kcf->ParserState = KCF_PSTATE_READ_ADDED_DATA;
 	else
-		kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
+		kcf->ParserState = KCF_PSTATE_READ_RECORD_HEADER;
 
 	kcf->AvailableAddedData = Record->AddedSize;
 
@@ -163,24 +165,24 @@ KCFERROR KCF_skip_record(KCF *kcf)
 	trace_kcf_msg("SkipRecord begin");
 	trace_kcf_state(kcf);
 
-	if (kcf->IsWriting)
-		return KCF_ERROR_INVALID_STATE;
-	if (kcf->ReaderState == KCF_RDSTATE_RECORD_HEADER) {
+	if (!KCF_PSTATE_IS_READING(kcf->ParserState))
+		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
+	if (kcf->ParserState == KCF_PSTATE_READ_RECORD_HEADER) {
 		Error = read_record_header(kcf, &Header, &HeaderSize);
 		if (Error)
 			return Error;
 
 		DataSize = Header.HeadSize - HeaderSize + Header.AddedSize;
-	} else if (kcf->ReaderState == KCF_RDSTATE_ADDED_DATA) {
+	} else if (kcf->ParserState == KCF_PSTATE_READ_ADDED_DATA) {
 		DataSize = kcf->AvailableAddedData;
 	} else {
-		return KCF_ERROR_INVALID_STATE;
+		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 	}
 
 	if (!IO_skip(kcf->Stream, DataSize))
-		return KCF_ERROR_READ;
+		return trace_kcf_error(KCF_ERROR_READ);
 
-	kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
+	kcf->ParserState = KCF_PSTATE_READ_RECORD_HEADER;
 
 	trace_kcf_state(kcf);
 	trace_kcf_msg("SkipRecord end");
@@ -210,7 +212,9 @@ KCFERROR KCF_read_added_data(KCF *kcf, void *Destination, size_t BufferSize,
 	trace_kcf_msg("ReadAddedData begin");
 	trace_kcf_state(kcf);
 
-	if (kcf->IsWriting || kcf->ReaderState != KCF_RDSTATE_ADDED_DATA)
+	if (!KCF_PSTATE_IS_READING(kcf->ParserState))
+		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
+	if (kcf->ParserState != KCF_PSTATE_READ_ADDED_DATA)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
 	if (BytesRead)
@@ -228,7 +232,7 @@ KCFERROR KCF_read_added_data(KCF *kcf, void *Destination, size_t BufferSize,
 
 	n_read = IO_read(kcf->Stream, Destination, BufferSize);
 	if (n_read < BufferSize)
-		return KCF_ERROR_READ;
+		return trace_kcf_error(KCF_ERROR_READ);
 
 	kcf->AvailableAddedData -= BufferSize;
 	if (BytesRead)
@@ -238,7 +242,7 @@ KCFERROR KCF_read_added_data(KCF *kcf, void *Destination, size_t BufferSize,
 	kcf->AddedDataAlreadyRead += n_read;
 
 	if (kcf->AvailableAddedData == 0)
-		kcf->ReaderState = KCF_RDSTATE_RECORD_HEADER;
+		kcf->ParserState = KCF_PSTATE_READ_RECORD_HEADER;
 	trace_kcf_state(kcf);
 	trace_kcf_msg("ReadAddedData end");
 

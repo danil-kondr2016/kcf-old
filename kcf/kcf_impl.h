@@ -12,21 +12,6 @@
 #include "record.h"
 #include "write.h"
 
-enum KcfWriterState {
-	KCF_WRSTATE_IDLE,
-	KCF_WRSTATE_MARKER,
-	KCF_WRSTATE_RECORD,
-	KCF_WRSTATE_ADDED_DATA,
-};
-
-enum KcfReaderState {
-	KCF_RDSTATE_IDLE,
-	KCF_RDSTATE_MARKER,
-	KCF_RDSTATE_RECORD_HEADER,
-	KCF_RDSTATE_RECORD_DATA,
-	KCF_RDSTATE_ADDED_DATA,
-};
-
 enum KcfUnpackerState {
 	KCF_UPSTATE_VALIDATING_FORMAT,
 	KCF_UPSTATE_FILE_HEADER,
@@ -41,12 +26,34 @@ enum KcfPackerState {
 	KCF_PKSTATE_AFTER_FILE_DATA,
 };
 
-struct kcf_st {
-	union {
-		uint64_t AvailableAddedData;
-		uint64_t AddedDataToBeWritten;
-	};
-	union {
+enum KcfParserState
+{
+	KCF_PSTATE_NEUTRAL,
+
+	KCF_PSTATE_READING = 0x100,
+	KCF_PSTATE_READ_MARKER,
+	KCF_PSTATE_READ_RECORD_HEADER,
+	KCF_PSTATE_READ_RECORD_DATA,
+	KCF_PSTATE_READ_ADDED_DATA,
+
+	KCF_PSTATE_WRITING = 0x200,
+	KCF_PSTATE_WRITE_MARKER,
+	KCF_PSTATE_WRITE_RECORD,
+	KCF_PSTATE_WRITE_ADDED_DATA,
+
+	KCF_PSTATE_HIGH_MASK = 0xF00,
+}; 
+
+#define KCF_PSTATE_IS_WRITING(x) ( ((x)&KCF_PSTATE_HIGH_MASK) == KCF_PSTATE_WRITING )
+#define KCF_PSTATE_IS_READING(x) ( ((x)&KCF_PSTATE_HIGH_MASK) == KCF_PSTATE_READING )
+
+struct kcf_st { 
+	union { 
+		uint64_t AvailableAddedData; 
+		uint64_t AddedDataToBeWritten; 
+	}; 
+
+	union { 
 		uint64_t AddedDataAlreadyRead;
 		uint64_t WrittenAddedData;
 	};
@@ -58,17 +65,14 @@ struct kcf_st {
 
 	IO *Stream;
 	struct KcfRecord LastRecord;
-	struct {
-		bool HasAddedDataCRC32 : 1;
-		bool HasAddedSize      : 1;
-		bool IsWriting         : 1;
-		bool IsWritable        : 1;
-		bool IsUnpacking       : 1;
-	};
-	union {
-		enum KcfWriterState WriterState;
-		enum KcfReaderState ReaderState;
-	};
+
+	bool HasAddedDataCRC32 : 1;
+	bool HasAddedSize      : 1;
+	bool IsWriting         : 1;
+	bool IsWritable        : 1;
+	bool IsUnpacking       : 1;
+
+	int  ParserState;
 
 	union {
 		enum KcfPackerState PackerState;
@@ -84,13 +88,13 @@ static inline void trace_kcf_state(KCF *kcf)
 	fputs("##KCFDEBUG## ", stderr);
 	fprintf(stderr,
 	        "%p %" PRId64 " %" PRId64 " %08" PRIx32 " %08" PRIx32
-	        " %" PRId64 " %" PRId64 " %c%c%c %d",
+	        " %" PRId64 " %" PRId64 " %c%c %04X",
 	        kcf, kcf->AvailableAddedData, kcf->AddedDataAlreadyRead,
 	        kcf->AddedDataCRC32, kcf->ActualAddedDataCRC32,
 	        kcf->RecordOffset, kcf->RecordEndOffset,
 	        kcf->HasAddedDataCRC32 ? 'C' : '-',
-	        kcf->HasAddedSize ? 'A' : '-', kcf->IsWriting ? 'W' : 'R',
-	        kcf->ReaderState);
+	        kcf->HasAddedSize ? 'A' : '-',
+	        kcf->ParserState);
 	fputc('\n', stderr);
 }
 

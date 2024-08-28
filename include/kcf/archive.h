@@ -24,13 +24,19 @@ void KCF_close(KCF *kcf);
  * Switches to write mode. Won't work if file is not open for writing
  * or modifying.
  */
-bool KCF_start_writing(KCF *kcf);
+KCFERROR KCF_start_writing(KCF *kcf);
 
 /**
  * Switches to read mode. If any added data have been written, it will
  * be finished before switching to read mode.
  */
-bool KCF_start_reading(KCF *kcf);
+KCFERROR KCF_start_reading(KCF *kcf);
+
+/**
+ * Initializes archive to write. Note that IO stream must be available
+ * to write otherwise this will return an error.
+ */
+KCFERROR KCF_init_archive(KCF *kcf);
 
 /* File inserting API */
 

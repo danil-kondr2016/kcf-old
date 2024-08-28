@@ -1,7 +1,6 @@
 #include <kcf/archive.h>
 #include <kcf/errors.h>
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "crc32c.h"
@@ -15,14 +14,14 @@ KCFERROR KCF_write_record(KCF *kcf, struct KcfRecord *Record)
 	trace_kcf_record(Record);
 	trace_kcf_state(kcf);
 
-	if (!kcf->IsWriting)
+	if (!KCF_PSTATE_IS_WRITING(kcf->ParserState))
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
-	if (kcf->WriterState == KCF_WRSTATE_IDLE)
-		kcf->WriterState = KCF_WRSTATE_RECORD;
-	if (kcf->WriterState == KCF_WRSTATE_MARKER)
+	if (kcf->ParserState == KCF_PSTATE_WRITING)
+		kcf->ParserState = KCF_PSTATE_WRITE_RECORD;
+	if (kcf->ParserState == KCF_PSTATE_WRITE_MARKER)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
-	if (kcf->WriterState == KCF_WRSTATE_ADDED_DATA)
+	if (kcf->ParserState == KCF_PSTATE_WRITE_ADDED_DATA)
 		KCF_finish_added_data(kcf);
 
 	/* Ensure that record CRC32 is valid */
@@ -43,7 +42,7 @@ KCFERROR KCF_write_record(KCF *kcf, struct KcfRecord *Record)
 	if (kcf->HasAddedSize) {
 		rec_copy(&kcf->LastRecord, Record);
 		kcf->AddedDataToBeWritten = kcf->LastRecord.AddedSize;
-		kcf->WriterState          = KCF_WRSTATE_ADDED_DATA;
+		kcf->ParserState          = KCF_PSTATE_WRITE_ADDED_DATA;
 	}
 
 	trace_kcf_state(kcf);
@@ -60,15 +59,14 @@ KCFERROR KCF_write_record_with_added_data(KCF *kcf, struct KcfRecord *Record,
 	trace_kcf_msg("WriteRecordWithAddedData begin");
 	trace_kcf_state(kcf);
 
-	if (!kcf->IsWriting)
+	if (!KCF_PSTATE_IS_WRITING(kcf->ParserState))
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
-	if (kcf->WriterState == KCF_WRSTATE_IDLE)
-		kcf->WriterState = KCF_WRSTATE_RECORD;
-	if (kcf->WriterState == KCF_WRSTATE_IDLE ||
-	    kcf->WriterState == KCF_WRSTATE_MARKER)
+	if (kcf->ParserState == KCF_PSTATE_WRITING)
+		kcf->ParserState = KCF_PSTATE_WRITE_RECORD;
+	if (kcf->ParserState == KCF_PSTATE_WRITE_MARKER)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
-	if (kcf->WriterState == KCF_WRSTATE_ADDED_DATA)
+	if (kcf->ParserState == KCF_PSTATE_WRITE_ADDED_DATA)
 		KCF_finish_added_data(kcf);
 
 	/* Ensure that record CRC32 is valid */
@@ -77,7 +75,7 @@ KCFERROR KCF_write_record_with_added_data(KCF *kcf, struct KcfRecord *Record,
 			Record->AddedDataCRC32 = crc32c(0, AddedData, Size);
 		}
 
-		if (Size > 2147483647) {
+		if (Size > 2147483647L) {
 			Record->HeadFlags |= KCF_HAS_ADDED_SIZE_8;
 		} else {
 			Record->HeadFlags |= KCF_HAS_ADDED_SIZE_4;
@@ -112,7 +110,9 @@ KCFERROR KCF_write_added_data(KCF *kcf, uint8_t *AddedData, size_t Size)
 	trace_kcf_msg("WriteAddedData begin");
 	trace_kcf_state(kcf);
 
-	if (!kcf->IsWriting || kcf->WriterState != KCF_WRSTATE_ADDED_DATA)
+	if (!KCF_PSTATE_IS_WRITING(kcf->ParserState))
+		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
+	if (kcf->ParserState != KCF_PSTATE_WRITE_ADDED_DATA)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
 	if (kcf->AddedDataToBeWritten > 0) {
@@ -147,7 +147,9 @@ KCFERROR KCF_finish_added_data(KCF *kcf)
 	trace_kcf_msg("FinishAddedData begin");
 	trace_kcf_state(kcf);
 
-	if (!kcf->IsWriting || kcf->WriterState != KCF_WRSTATE_ADDED_DATA)
+	if (!KCF_PSTATE_IS_WRITING(kcf->ParserState))
+		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
+	if (kcf->ParserState != KCF_PSTATE_WRITE_ADDED_DATA)
 		return trace_kcf_error(KCF_ERROR_INVALID_STATE);
 
 	/* If data size is known and no CRC32 of added data is calculated, don't
@@ -181,7 +183,7 @@ cleanup:
 	kcf->AddedDataCRC32       = 0;
 	kcf->HasAddedDataCRC32    = false;
 	kcf->HasAddedSize         = false;
-	kcf->WriterState          = KCF_WRSTATE_RECORD;
+	kcf->ParserState          = KCF_PSTATE_WRITE_RECORD;
 
 	trace_kcf_state(kcf);
 	trace_kcf_msg("FinishAddedData end");
