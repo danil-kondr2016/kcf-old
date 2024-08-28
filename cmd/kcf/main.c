@@ -1,10 +1,14 @@
+#ifdef _FILE_OFFSET_BITS
+#undef _FILE_OFFSET_BITS
+#endif
+#define _FILE_OFFSET_BITS 64
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "archive.h"
-#include "pack.h"
-#include "unpack.h"
+#include <kcf/archive.h>
 
 char *Program = "KCF";
 
@@ -66,39 +70,81 @@ int main(int argc, char **argv)
 	return 1;
 }
 
+static KCFERROR pack_file(KCF *archive, char *path)
+{
+	struct KcfFileInfo info = {0};
+	IO *f;
+	uint8_t buffer[4096];
+	size_t to_read, n_read;
+	int64_t file_size;
+	KCFERROR Error;
+
+	f = IO_open_cfile(path, "rb");
+	if (!f) {
+		return KCF_ERROR_FILE_NOT_FOUND;
+	}
+
+	info.FileType = KCF_FILE_REGULAR;
+	info.FileName = path;
+	info.HasUnpackedSize = true;
+	if (file_size > 2147483647L)
+		info.HasUnpackedSize8 = true;
+	info.UnpackedSize = file_size;
+
+	if ((Error = KCF_begin_file(archive, &info)))
+		goto cleanup;
+
+	if ((Error = KCF_insert_file_data(archive, f)))
+		goto cleanup;
+
+	if ((Error = KCF_end_file(archive)))
+		goto cleanup;
+
+cleanup:
+	IO_close(f);
+	return Error;
+}
+
 static int pack(int argc, char **argv)
 {
 	char *OutputName, *InputName;
-	HKCF Output;
+	IO *out_file;
+	KCF *archive;
 	KCFERROR Error;
 
 	OutputName = argv[0];
 	argc--;
 	argv++;
 
-	Error = CreateArchive(OutputName, KCF_MODE_CREATE, &Output);
+	out_file = IO_open_cfile(OutputName, "w+b");
+	if (!out_file) {
+		printf("%s: failed to create archive %s: %s\n", Program,
+		       OutputName, kcf_error_string(Error));
+		return 1;
+	}
+
+	Error = KCF_create(out_file, &archive);
 	if (Error) {
 		printf("%s: failed to create archive %s: %s\n", Program,
-		       OutputName, GetKcfErrorString(Error));
+		       OutputName, kcf_error_string(Error));
 		return 1;
 	}
 
 	printf("Creating archive %s...\n", OutputName);
 
-	WriteArchiveMarker(Output);
-	WriteArchiveHeader(Output, 0);
+	KCF_init_archive(archive);
 
 	for (InputName = *argv; InputName; argv++, argc--, InputName = *argv) {
 		printf("Packing file %s...\n", InputName);
-		Error = PackFile(Output, InputName, 0);
+		Error = pack_file(archive, InputName);
 		if (Error) {
 			printf("%s: failed to pack file %s: %s\n", Program,
-			       InputName, GetKcfErrorString(Error));
+			       InputName, kcf_error_string(Error));
 			return 1;
 		}
 	}
 
-	CloseArchive(Output);
+	KCF_close(archive);
 
 	return 0;
 }
