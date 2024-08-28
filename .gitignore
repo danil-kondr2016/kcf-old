@@ -13,3 +13,8 @@
 *~
 .*.un~
 .*.swp
+
+compile_commands.json
+build/
+.xmake/
+.cache/
